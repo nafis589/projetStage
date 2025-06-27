@@ -1,9 +1,50 @@
+"use client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-
+import { useState } from "react";
 const RegisterForm = () => {
+  const [user, setUser] = useState({
+    firstname: "",
+    lastname: "",
+    password: "",
+    email: "",
+  });
+  const handleSubmit = async (
+    e: React.FormEvent<HTMLFormElement>
+  ): Promise<void> => {
+    e.preventDefault();
+
+    try {
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(user),
+      });
+
+      if (!response.ok) {
+        console.error("Échec de l'inscription :", response.statusText);
+        return;
+      }
+
+      const data = await response.json();
+      console.log("Inscription réussie :", data);
+    } catch (error) {
+      console.error("Erreur lors de l'inscription :", error);
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setUser((prevUser) => ({
+      ...prevUser,
+      [name]: value,
+    }));
+  };
+
   return (
     <>
       <header className="bg-black text-white px-6 py-4 fixed w-full top-0 z-50">
@@ -15,6 +56,7 @@ const RegisterForm = () => {
       <section className="flex min-h-screen bg-zinc-50 px-4 py-16 md:py-32 dark:bg-transparent">
         <form
           action=""
+          onSubmit={handleSubmit}
           className="bg-muted m-auto h-fit w-full max-w-sm overflow-hidden rounded-[calc(var(--radius)+.125rem)] border shadow-md shadow-zinc-950/5 dark:[--color-muted:var(--color-zinc-900)]"
         >
           <div className="bg-card -m-px rounded-[calc(var(--radius)+.125rem)] border p-8 pb-6">
@@ -27,7 +69,7 @@ const RegisterForm = () => {
                 Geservice
               </Link>
               <h1 className="text-title mb-1 mt-4 text-xl font-semibold">
-                Create a Tailark Account
+                Create an Account
               </h1>
               <p className="text-sm">
                 Welcome! Create an account to get started
@@ -40,13 +82,27 @@ const RegisterForm = () => {
                   <Label htmlFor="firstname" className="block text-sm">
                     Firstname
                   </Label>
-                  <Input type="text" required name="firstname" id="firstname" />
+                  <Input
+                    type="text"
+                    required
+                    name="firstname"
+                    id="firstname"
+                    value={user.firstname}
+                    onChange={handleChange}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="lastname" className="block text-sm">
                     Lastname
                   </Label>
-                  <Input type="text" required name="lastname" id="lastname" />
+                  <Input
+                    type="text"
+                    required
+                    name="lastname"
+                    id="lastname"
+                    value={user.lastname}
+                    onChange={handleChange}
+                  />
                 </div>
               </div>
 
@@ -54,7 +110,14 @@ const RegisterForm = () => {
                 <Label htmlFor="email" className="block text-sm">
                   Username
                 </Label>
-                <Input type="email" required name="email" id="email" />
+                <Input
+                  type="email"
+                  required
+                  name="email"
+                  id="email"
+                  value={user.email}
+                  onChange={handleChange}
+                />
               </div>
 
               <div className="space-y-0.5">
@@ -74,9 +137,11 @@ const RegisterForm = () => {
                 <Input
                   type="password"
                   required
-                  name="pwd"
-                  id="pwd"
+                  name="password"
+                  id="password"
+                  value={user.password}
                   className="input sz-md variant-mixed"
+                  onChange={handleChange}
                 />
               </div>
 
@@ -87,7 +152,7 @@ const RegisterForm = () => {
               <Button type="button" variant="outline">
                 annuler
               </Button>
-              <Button type="button" variant="outline">
+              <Button type="submit" variant="outline">
                 s&apos;inscrire
               </Button>
             </div>

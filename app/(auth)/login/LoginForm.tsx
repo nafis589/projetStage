@@ -70,7 +70,7 @@ const LoginForm = () => {
               <Button type="button" variant="outline">
                 Annuler
               </Button>
-              <Button type="button" variant="outline">
+              <Button type="submit" variant="outline">
                 se connecter
               </Button>
             </div>
