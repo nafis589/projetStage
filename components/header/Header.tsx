@@ -1,8 +1,17 @@
 "use client";
 import React, { useState } from "react";
+import { useRouter } from 'next/navigation'
+
 
 // Header Component
 const Header = () => {
+
+  const router = useRouter();
+  const handleClick = ()=>{
+    router.push('/register')
+  }
+
+
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
@@ -14,6 +23,8 @@ const Header = () => {
   const closeSignupModal = () => {
     setIsSignupModalOpen(false);
   };
+
+
 
   return (
    <>
@@ -176,7 +187,7 @@ const Header = () => {
               </p>
               
               {/* Client Option */}
-              <button className="w-full p-4 border border-gray-200 rounded-lg hover:border-black hover:bg-gray-50 transition-all duration-200 text-left group">
+              <button onClick={handleClick} className="w-full p-4 border border-gray-200 rounded-lg hover:border-black hover:bg-gray-50 transition-all duration-200 text-left group">
                 <div className="flex items-center space-x-4">
                   <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center group-hover:bg-gray-200 transition-colors">
                     <svg
