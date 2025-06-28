@@ -11,6 +11,14 @@ const Header = () => {
     router.push('/register')
   }
 
+  const handleClickLogin = ()=>{
+    router.push('/login')
+  }
+
+  const handleClickPro =()=>{
+    router.push('/professionel')
+  }
+
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -80,7 +88,7 @@ const Header = () => {
           <button className="hover:text-gray-300 transition-colors">
             Help
           </button>
-          <button className="hover:text-gray-300 transition-colors">
+          <button onClick={handleClickLogin} className="hover:text-gray-300 transition-colors">
             Log in
           </button>
           <button 
@@ -214,7 +222,7 @@ const Header = () => {
               </button>
               
               {/* Professional Option */}
-              <button className="w-full p-4 border border-gray-200 rounded-lg hover:border-black hover:bg-gray-50 transition-all duration-200 text-left group">
+              <button onClick={handleClickPro} className="w-full p-4 border border-gray-200 rounded-lg hover:border-black hover:bg-gray-50 transition-all duration-200 text-left group">
                 <div className="flex items-center space-x-4">
                   <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center group-hover:bg-gray-200 transition-colors">
                     <svg

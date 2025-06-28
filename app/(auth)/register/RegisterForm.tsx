@@ -4,13 +4,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { Toaster } from "@/components/ui/toaster";
+
 const RegisterForm = () => {
+  const { toast } = useToast();
   const [user, setUser] = useState({
     firstname: "",
     lastname: "",
     password: "",
     email: "",
   });
+
   const handleSubmit = async (
     e: React.FormEvent<HTMLFormElement>
   ): Promise<void> => {
@@ -32,6 +37,13 @@ const RegisterForm = () => {
 
       const data = await response.json();
       console.log("Inscription réussie :", data);
+      
+      // Afficher le toast de succès
+      toast({
+        variant: "success",
+        title: "Inscription réussie !",
+        description: "Votre compte a été créé avec succès.",
+      });
     } catch (error) {
       console.error("Erreur lors de l'inscription :", error);
     }
@@ -50,7 +62,7 @@ const RegisterForm = () => {
       <header className="bg-black text-white px-6 py-4 fixed w-full top-0 z-50">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           {/* Logo */}
-          <div className="text-2xl font-bold">Geservice</div>
+          <div className="text-2xl font-bold"><Link href="/">Geservice</Link></div>
         </div>
       </header>
       <section className="flex min-h-screen bg-zinc-50 px-4 py-16 md:py-32 dark:bg-transparent">
@@ -168,6 +180,7 @@ const RegisterForm = () => {
           </div>
         </form>
       </section>
+      <Toaster />
     </>
   );
 };

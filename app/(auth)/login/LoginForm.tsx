@@ -1,19 +1,44 @@
+"use client";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import React from "react";
+import React, {useState} from "react";
 import Link from "next/link";
+import {signIn} from 'next-auth/react'
+
 const LoginForm = () => {
+  const [user, setUser] = useState({
+    email: "",
+    password: "",
+  });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setUser((prevUser) => ({
+      ...prevUser,
+      [name]: value,
+    }));
+  };
+
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>):Promise<void>=>{
+    e.preventDefault();
+    signIn('credentials', {
+      email: user.email,
+      password: user.password,
+    })
+  }
   return (
     <>
       <header className="bg-black text-white px-6 py-4 fixed w-full top-0 z-50">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           {/* Logo */}
-          <div className="text-2xl font-bold">Geservice</div>
+          <div className="text-2xl font-bold"><Link href="/">Geservice</Link></div>
         </div>
       </header>
       <section className="flex min-h-screen bg-zinc-50 px-4 py-16 md:py-32 dark:bg-transparent">
         <form
+          onSubmit={handleSubmit}
           action=""
           className="bg-muted m-auto h-fit w-full max-w-sm overflow-hidden rounded-[calc(var(--radius)+.125rem)] border shadow-md shadow-zinc-950/5 dark:[--color-muted:var(--color-zinc-900)]"
         >
@@ -37,7 +62,7 @@ const LoginForm = () => {
                 <Label htmlFor="email" className="block text-sm">
                   Username
                 </Label>
-                <Input type="email" required name="email" id="email" />
+                <Input type="email" required name="email" id="email" value={user.email} onChange={handleChange}/>
               </div>
 
               <div className="space-y-0.5">
@@ -57,9 +82,11 @@ const LoginForm = () => {
                 <Input
                   type="password"
                   required
-                  name="pwd"
-                  id="pwd"
+                  name="password"
+                  id="password"
                   className="input sz-md variant-mixed"
+                  value={user.password}
+                  onChange={handleChange}
                 />
               </div>
 
