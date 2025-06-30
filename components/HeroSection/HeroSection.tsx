@@ -149,7 +149,7 @@ const HeroSection = () => {
                     <div className="absolute left-3 top-3 w-3 h-3 bg-black rounded-full"></div>
                     <input
                       type="text"
-                      placeholder="Pickup location"
+                      placeholder="Quel service rechercher vous?"
                       value={pickupLocation}
                       onChange={(e) => setPickupLocation(e.target.value)}
                       className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
@@ -159,7 +159,7 @@ const HeroSection = () => {
                     <div className="absolute left-3 top-3 w-3 h-3 bg-gray-400 rounded-sm"></div>
                     <input
                       type="text"
-                      placeholder="Dropoff location"
+                      placeholder="Entrez votre adresse"
                       value={dropoffLocation}
                       onChange={(e) => setDropoffLocation(e.target.value)}
                       className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
@@ -322,7 +322,7 @@ const HeroSection = () => {
             {/* Right Image */}
             <div className="relative">
               <img 
-                src="https://images.pexels.com/photos/30463342/pexels-photo-30463342.jpeg" 
+                src="/landingimg.jpg" 
                 alt="People getting into Uber"
                 className="w-full h-96 object-cover rounded-lg shadow-2xl"
               />
