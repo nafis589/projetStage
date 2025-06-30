@@ -5,8 +5,12 @@ import { Input } from "@/components/ui/input";
 import React, {useState} from "react";
 import Link from "next/link";
 import {signIn} from 'next-auth/react'
+import { useRouter } from "next/navigation";
+import { useToast } from "@/hooks/use-toast";
 
 const LoginForm = () => {
+  const router = useRouter();
+  const { toast } = useToast();
   const [user, setUser] = useState({
     email: "",
     password: "",
@@ -23,10 +27,51 @@ const LoginForm = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>):Promise<void>=>{
     e.preventDefault();
-    signIn('credentials', {
-      email: user.email,
-      password: user.password,
-    })
+    try{
+      const result = await signIn('credentials', {
+        email: user.email,
+        password: user.password,
+        redirect: false,
+      });
+
+      if(result?.error){
+        toast({
+          variant: "destructive",
+          title: "Erreur de connexion",
+          description: "Email ou mot de passe incorrect",
+        });
+        return ;
+      }
+      
+
+      const response = await fetch('/api', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if(response.ok){
+        const userData = await response.json();
+        console.log(userData);
+        if(userData.role === 'client'){
+          router.push('/dashboard/client');
+        }else{
+          router.push('/dashboard/professional');
+        }
+      }
+      
+    } catch(error){
+      console.error('Erreur lors de la connexion', error);
+      toast({
+        variant: 'destructive',
+        title:'Erreur',
+        description: 'Une erreur est survenue lors de la connexion',
+      })
+    }
+    
+    
+    
   }
   return (
     <>
