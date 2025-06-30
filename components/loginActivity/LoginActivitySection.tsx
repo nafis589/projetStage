@@ -6,19 +6,20 @@ const LoginActivitySection = () => {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
               <h2 className="text-4xl font-bold text-black mb-6">
-                Log in to see your recent activity
+                Connectez-vous pour suivre vos services
               </h2>
               <p className="text-gray-600 mb-8 text-lg">
-                View past trips, tailored suggestions, support resources, and more.
+                Accédez à votre tableau de bord, suivez vos prestations récentes, 
+                consultez vos rendez-vous à venir et gérez vos informations personnelles.
               </p>
               <div className="space-y-4">
                 <button className="bg-black text-white px-8 py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors">
-                  Log in to your account
+                    Se connecter à mon compte
                 </button>
                 <p className="text-gray-600">
-                  Don&apos;t have an Uber account? 
+                    Vous n&apos;avez pas encore de compte ?
                   <button className="text-black underline hover:no-underline ml-1">
-                    Sign up
+                    Créer un compte
                   </button>
                 </p>
               </div>
