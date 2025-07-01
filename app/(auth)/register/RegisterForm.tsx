@@ -6,9 +6,13 @@ import Link from "next/link";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
+import useLoading from "@/hooks/useLoading";
+import { useRouter } from "next/navigation";
 
 const RegisterForm = () => {
   const { toast } = useToast();
+  const { setLoading } = useLoading();
+  const router = useRouter();
   const [user, setUser] = useState({
     firstname: "",
     lastname: "",
@@ -20,6 +24,7 @@ const RegisterForm = () => {
     e: React.FormEvent<HTMLFormElement>
   ): Promise<void> => {
     e.preventDefault();
+    setLoading(true);
 
     try {
       const response = await fetch("/api/auth/register", {
@@ -31,21 +36,35 @@ const RegisterForm = () => {
       });
 
       if (!response.ok) {
-        console.error("Échec de l'inscription :", response.statusText);
+        toast({
+          variant: "destructive",
+          title: "Échec de l'inscription",
+          description: "Une erreur est survenue lors de l'inscription.",
+        });
         return;
       }
 
       const data = await response.json();
       console.log("Inscription réussie :", data);
       
-      // Afficher le toast de succès
       toast({
         variant: "success",
         title: "Inscription réussie !",
         description: "Votre compte a été créé avec succès.",
       });
+
+      // Redirection vers la page de connexion
+      router.push('/login');
+      
     } catch (error) {
       console.error("Erreur lors de l'inscription :", error);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Une erreur est survenue lors de l'inscription.",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 

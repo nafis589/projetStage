@@ -7,10 +7,12 @@ import Link from "next/link";
 import {signIn} from 'next-auth/react'
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
+import useLoading from "@/hooks/useLoading";
 
 const LoginForm = () => {
   const router = useRouter();
   const { toast } = useToast();
+  const { setLoading } = useLoading();
   const [user, setUser] = useState({
     email: "",
     password: "",
@@ -24,9 +26,9 @@ const LoginForm = () => {
     }));
   };
 
-
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>):Promise<void>=>{
     e.preventDefault();
+    setLoading(true);
     try{
       const result = await signIn('credentials', {
         email: user.email,
@@ -35,15 +37,16 @@ const LoginForm = () => {
       });
 
       if(result?.error){
+        console.log("pourquoi le toast ne s'affiche pas?");
         toast({
           variant: "destructive",
           title: "Erreur de connexion",
           description: "Email ou mot de passe incorrect",
         });
+        setLoading(false);
         return ;
       }
       
-
       const response = await fetch('/api', {
         method: 'GET',
         headers: {
@@ -68,10 +71,9 @@ const LoginForm = () => {
         title:'Erreur',
         description: 'Une erreur est survenue lors de la connexion',
       })
+    } finally {
+      setLoading(false);
     }
-    
-    
-    
   }
   return (
     <>
