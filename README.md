@@ -1,36 +1,73 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Service à Domicile
 
-## Getting Started
+Une application web pour trouver et réserver des services à domicile.
 
-First, run the development server:
+## Fonctionnalités principales
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- Authentification des utilisateurs (inscription et connexion)
+- Recherche de prestataires de services
+- Réservation de services
+- Tableau de bord pour les utilisateurs et les prestataires
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Structure du projet
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Le projet est construit avec Next.js et suit la structure de l'App Router.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `app/`: Contient les pages et les routes de l'application.
+  - `(auth)/`: Gère l'authentification (inscription, connexion).
+  - `api/`: Contient les routes de l'API.
+  - `components/`: Contient les composants React réutilisables.
+  - `dashboard/`: Contient les pages du tableau de bord.
+- `components/`: Contient les composants React globaux.
+- `hooks/`: Contient les hooks React personnalisés.
+- `lib/`: Contient les fonctions et les utilitaires de la bibliothèque.
+- `public/`: Contient les actifs statiques.
+- `types/`: Contient les définitions de types TypeScript.
+- `util/`: Contient les fonctions utilitaires.
 
-## Learn More
+## Technologies utilisées
 
-To learn more about Next.js, take a look at the following resources:
+- **Framework:** [Next.js](https://nextjs.org/)
+- **Langage:** [TypeScript](https://www.typescriptlang.org/)
+- **Style:** [Tailwind CSS](https://tailwindcss.com/)
+- **Authentification:** [NextAuth.js](https://next-auth.js.org/)
+- **Base de données:** [MySQL](https://www.mysql.com/)
+- **Gestion de l'état:** [Zustand](https://zustand-demo.pmnd.rs/)
+- **Composants d'interface utilisateur:** [Radix UI](https://www.radix-ui.com/)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Instructions d'installation et d'exécution
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1.  **Cloner le dépôt:**
+    ```bash
+    git clone https://github.com/votre-utilisateur/service-domicile.git
+    cd service-domicile
+    ```
 
-## Deploy on Vercel
+2.  **Installer les dépendances:**
+    ```bash
+    npm install
+    ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+3.  **Configurer les variables d'environnement:**
+    Créez un fichier `.env.local` à la racine du projet et ajoutez les variables d'environnement nécessaires (par exemple, les informations d'identification de la base de données, le secret de NextAuth).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+4.  **Exécuter les migrations de la base de données:**
+    Assurez-vous que votre base de données MySQL est en cours d'exécution et exécutez les migrations de base de données nécessaires pour créer les tables `users` et `clients`.
+
+5.  **Démarrer le serveur de développement:**
+    ```bash
+    npm run dev
+    ```
+
+    Ouvrez [http://localhost:3000](http://localhost:3000) dans votre navigateur pour voir l'application.
+
+## Instructions de contribution
+
+Les contributions sont les bienvenues ! Veuillez ouvrir une issue pour discuter des changements majeurs avant de soumettre une pull request.
+
+## Historique des modifications
+
+*   **v0.1.0 (Date):**
+    *   Initialisation du projet avec Next.js, TypeScript et Tailwind CSS.
+    *   Mise en place de l'authentification des utilisateurs avec NextAuth.js.
+    *   Création de la structure de base de l'application.
