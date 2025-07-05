@@ -2,6 +2,9 @@
 import React, { Fragment, useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/hooks/use-toast";
+import { Toaster } from "@/components/ui/toaster";
+import ServicePopover from "@/components/ui/ServicePopover";
 import {
   Home,
   User,
@@ -23,6 +26,12 @@ import {
 } from "lucide-react";
 
 // Types
+
+interface ServiceFormData {
+  name: string;
+  price: string;
+  description: string;
+}
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -143,7 +152,7 @@ const Input: React.FC<InputProps> = ({
   </div>
 );
 
-const Button: React.FC<ButtonProps> = ({
+export const Button: React.FC<ButtonProps> = ({
   children,
   onClick,
   variant = "primary",
@@ -259,7 +268,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         } lg:relative lg:shadow-none`}
       >
         <div className="p-6">
-          <h1 className="text-2xl font-bold text-black">ServicePro</h1>
+          <h1 className="text-2xl font-bold text-black">Geservice</h1>
           <p className="text-gray-500 text-sm">Dashboard</p>
         </div>
 
@@ -379,6 +388,7 @@ const Dashboard: React.FC = () => (
 );
 
 const Profile: React.FC<{ professionalId: string }> = ({ professionalId }) => {
+  const { toast } = useToast();
   const [profile, setProfile] = useState<Profile>({
     firstname: "Jean",
     lastname: "Dupont",
@@ -412,6 +422,11 @@ const Profile: React.FC<{ professionalId: string }> = ({ professionalId }) => {
       const data = await response.json();
       console.log("Profile updated successfully:", data);
       // Optionally, show a success message to the user
+      toast({
+        variant: "success",
+        title: "Mise à jour !",
+        description: "Profil mis à jour avec succès.",
+      });
     } catch (error) {
       console.error("Error updating profile:", error);
       // Optionally, show an error message to the user
@@ -469,59 +484,107 @@ const Profile: React.FC<{ professionalId: string }> = ({ professionalId }) => {
       <Button icon={Check} onClick={handleSave}>
         Sauvegarder les modifications
       </Button>
+      <Toaster />
     </Card>
   );
 };
 
-const Services: React.FC = () => {
-  const [services, setServices] = useState<Service[]>([
-    {
-      id: 1,
-      name: "Ménage",
-      price: "25€/h",
-      description: "Service de ménage complet",
-    },
-    {
-      id: 2,
-      name: "Jardinage",
-      price: "30€/h",
-      description: "Entretien des espaces verts",
-    },
-    {
-      id: 3,
-      name: "Bricolage",
-      price: "35€/h",
-      description: "Petits travaux de bricolage",
-    },
-  ]);
+//popover service
+
+const Services: React.FC<{ professionalId: string }> = ({ professionalId }) => {
+  const [services, setServices] = useState<Service[]>([]);
+
+  const [popoverState, setPopoverState] = useState<{
+    isOpen: boolean;
+    mode: "add" | "edit";
+    editingService?: Service;
+  }>({ isOpen: false, mode: "add" });
+
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        const response = await fetch(`/api/service/${professionalId}`);
+        if (!response.ok) {
+          throw new Error("Failed to fetch services");
+        }
+        const data = await response.json();
+        setServices(data);
+      } catch (error) {
+        console.error("Error fetching services:", error);
+      }
+    };
+
+    fetchServices();
+  }, [professionalId]);
 
   const handleAddService = () => {
-    const newService: Service = {
-      id: services.length + 1,
-      name: "Nouveau service",
-      price: "0€/h",
-      description: "Description du service",
-    };
-    setServices([...services, newService]);
+    setPopoverState({ isOpen: true, mode: "add" });
+  };
+
+  const handleEditService = (service: Service) => {
+    setPopoverState({
+      isOpen: true,
+      mode: "edit",
+      editingService: service,
+    });
+  };
+
+  const handleSaveService = async (data: ServiceFormData) => {
+    if (popoverState.mode === "add") {
+      try {
+        const response = await fetch(`/api/service/${professionalId}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ ...data, professionalId }),
+        });
+
+        console.log(data);
+
+        if (!response.ok) {
+          throw new Error("Failed to create service");
+        }
+
+        const newService = await response.json();
+        setServices([...services, newService]);
+      } catch (error) {
+        console.error("Error creating service:", error);
+      }
+    } else if (popoverState.mode === "edit" && popoverState.editingService) {
+      // Mettez à jour la logique de modification ici si nécessaire
+      setServices(
+        services.map((s) =>
+          s.id === popoverState.editingService!.id ? { ...s, ...data } : s
+        )
+      );
+    }
+    setPopoverState({ isOpen: false, mode: "add" });
+  };
+
+  const handleClosePopover = () => {
+    setPopoverState({ isOpen: false, mode: "add" });
   };
 
   const actions: TableAction[] = [
     {
       icon: Edit3,
-      onClick: (service: Record<string, string | number>) => {
-        console.log("Edit", service);
+      onClick: (serviceData: Record<string, string | number>) => {
+        const service = services.find((s) => s.name === serviceData.name);
+        if (service) {
+          handleEditService(service);
+        }
       },
       className: "hover:bg-blue-50 text-blue-600",
     },
     {
       icon: Trash2,
-      onClick: (service: Record<string, string | number>) => {
-        setServices(services.filter((s) => s.id !== service.id));
+      onClick: (serviceData: Record<string, string | number>) => {
+        setServices(services.filter((s) => s.name !== serviceData.name));
       },
       className: "hover:bg-red-50 text-red-600",
     },
   ];
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -532,16 +595,42 @@ const Services: React.FC = () => {
       </div>
 
       <Card>
-        <Table
-          headers={["Service", "Prix", "Description"]}
-          data={services.map((s) => ({
-            name: s.name,
-            price: s.price,
-            description: s.description,
-          }))}
-          actions={actions}
-        />
+        {services.length === 0 ? (
+          <div className="flex items-center justify-center h-40 text-gray-500 text-center">
+            Veuillez ajouter vos informations de service
+          </div>
+        ) : (
+          <Table
+            headers={["Service", "Prix", "Description"]}
+            data={services.map((s) => ({
+              name: s.name,
+              price: s.price,
+              description: s.description,
+            }))}
+            actions={actions}
+          />
+        )}
       </Card>
+
+      <ServicePopover
+        isOpen={popoverState.isOpen}
+        onClose={handleClosePopover}
+        onSave={handleSaveService}
+        initialData={
+          popoverState.editingService
+            ? {
+                name: popoverState.editingService.name,
+                price: popoverState.editingService.price,
+                description: popoverState.editingService.description,
+              }
+            : undefined
+        }
+        title={
+          popoverState.mode === "add"
+            ? "Ajouter un service"
+            : "Modifier le service"
+        }
+      />
     </div>
   );
 };
@@ -1017,7 +1106,7 @@ const ProfessionalDashboard = ({ params }: Props) => {
       case "profile":
         return <Profile professionalId={professionalId} />;
       case "services":
-        return <Services />;
+        return <Services professionalId={professionalId} />;
       case "availability":
         return <Availability professionalId={professionalId} />;
       case "bookings":
