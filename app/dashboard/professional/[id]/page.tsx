@@ -144,7 +144,7 @@ const Input: React.FC<InputProps> = ({
     )}
     <input
       type={type}
-      value={value}
+      value={value || ""}
       onChange={onChange}
       placeholder={placeholder}
       className="w-full px-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
@@ -390,19 +390,48 @@ const Dashboard: React.FC = () => (
 const Profile: React.FC<{ professionalId: string }> = ({ professionalId }) => {
   const { toast } = useToast();
   const [profile, setProfile] = useState<Profile>({
-    firstname: "Jean",
-    lastname: "Dupont",
-    email: "jean.dupont@email.com",
-    bio: "Professionnel expérimenté dans les services à domicile",
-    phone: "06 12 34 56 78",
-    address: "123 rue de la Paix",
-    city: "Paris",
-    services: "Ménage, Jardinage, Bricolage",
+    firstname: "",
+    lastname: "",
+    email: "",
+    bio: "",
+    phone: "",
+    address: "",
+    city: "",
+    services: "",
   });
 
   const handleChange = (field: keyof Profile, value: string) => {
     setProfile((prev) => ({ ...prev, [field]: value }));
   };
+
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        const response = await fetch(`/api/professionals/${professionalId}`);
+        if (!response.ok) {
+          throw new Error("Failed to fetch services");
+        }
+        const data = await response.json();
+
+        // Ensure all fields are strings to prevent controlled/uncontrolled input issues
+        setProfile({
+          firstname: data[0].firstname,
+          lastname: data[0].lastname || "",
+          email: data[0].email || "",
+          bio: data[0].bio || "",
+          phone: data[0].phone || "",
+          address: data[0].address || "",
+          city: data[0].city || "",
+          services: data[0].profession || "",
+        });
+        console.log("voici:", profile);
+      } catch (error) {
+        console.error("Error fetching services:", error);
+      }
+    };
+
+    fetchServices();
+  }, [professionalId]);
 
   const handleSave = async () => {
     try {

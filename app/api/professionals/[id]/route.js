@@ -61,3 +61,24 @@ export const PUT = async (req, context) => {
     );
   }
 };
+
+export async function GET(request, context) {
+  try {
+     const { id: professionalId } = context.params;
+
+    const profils = await query(
+      "SELECT users.firstname, users.lastname, users.email, professionals.profession, professionals.phone, professionals.bio, professionals.city, professionals.address FROM professionals JOIN users ON professionals.user_id = users.id WHERE professionals.user_id=?",
+      [professionalId]
+    );
+
+    console.log(profils);
+
+    return NextResponse.json(profils);
+  } catch (error) {
+    console.error("Error fetching services:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch services" },
+      { status: 500 }
+    );
+  }
+}
