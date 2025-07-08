@@ -870,6 +870,7 @@ const Availability = ({ professionalId }: AvailabilityProps) => {
       if (response.ok) {
         const result = await response.json();
         toast({
+          variant: "success",
           title: "Succès !",
           description: `Disponibilités sauvegardées avec succès! ${result.count} créneaux enregistrés.`,
         });
