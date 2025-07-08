@@ -23,9 +23,47 @@ import {
   Bell,
   Globe,
   Shield,
+  ChevronDown,
 } from "lucide-react";
 
 // Types
+
+interface TimeSlot {
+  start: string;
+  end: string;
+}
+
+interface DayAvailability {
+  enabled: boolean;
+  timeSlots: TimeSlot[];
+}
+
+interface WeeklyAvailability {
+  monday: DayAvailability;
+  tuesday: DayAvailability;
+  wednesday: DayAvailability;
+  thursday: DayAvailability;
+  friday: DayAvailability;
+  saturday: DayAvailability;
+  sunday: DayAvailability;
+}
+
+interface TimeOption {
+  value: string;
+  label: string;
+}
+
+interface Day {
+  key: keyof WeeklyAvailability;
+  label: string;
+}
+
+interface TimeSelectorProps {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  dropdownId: string;
+}
 
 interface ServiceFormData {
   name: string;
@@ -257,14 +295,14 @@ const Sidebar: React.FC<SidebarProps> = ({
       {/* Mobile Overlay */}
       {isMobileOpen && (
         <div
-          className="fixed inset-0 bg-transparent bg-opacity-50 z-40 lg:hidden"
+          className="fixed inset-0 bg-transparent bg-opacity-50 z-30 lg:hidden"
           onClick={() => setIsMobileOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <div
-        className={`fixed left-0 top-0 h-screen w-64 bg-white shadow-lg z-50 transform transition-transform duration-300 lg:translate-x-0 ${
+        className={`fixed left-0 top-0 h-screen w-64 bg-white shadow-lg z-40 transform transition-transform duration-300 lg:translate-x-0 ${
           isMobileOpen ? "translate-x-0" : "-translate-x-full"
         } lg:relative lg:shadow-none flex flex-col`}
       >
@@ -324,7 +362,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
 // Topbar Component
 const Topbar: React.FC<TopbarProps> = ({ username, onMenuClick }) => (
-  <div className="bg-white shadow-sm px-6 py-4 flex items-center justify-between">
+  <div className="fixed top-0 right-0 left-0 lg:left-64 bg-white shadow-sm px-6 py-4 flex items-center justify-between z-30">
     <div className="flex items-center gap-4">
       <button
         onClick={onMenuClick}
@@ -695,136 +733,395 @@ const Services: React.FC<{ professionalId: string }> = ({ professionalId }) => {
 };
 
 const Availability = ({ professionalId }: AvailabilityProps) => {
-  const [selectedSlots, setSelectedSlots] = useState<Set<string>>(new Set());
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const { toast } = useToast();
+  const [availability, setAvailability] = useState<WeeklyAvailability>({
+    monday: { enabled: false, timeSlots: [] },
+    tuesday: { enabled: false, timeSlots: [] },
+    wednesday: { enabled: false, timeSlots: [] },
+    thursday: { enabled: false, timeSlots: [] },
+    friday: { enabled: false, timeSlots: [] },
+    saturday: { enabled: false, timeSlots: [] },
+    sunday: { enabled: false, timeSlots: [] },
+  });
 
-  const hours = [
-    "08:00",
-    "09:00",
-    "10:00",
-    "11:00",
-    "12:00",
-    "13:00",
-    "14:00",
-    "15:00",
-    "16:00",
-    "17:00",
-    "18:00",
-  ];
-  const days = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const toggleSlot = (day: string, hour: string) => {
-    const slot = `${day}-${hour}`;
-    const newSlots = new Set(selectedSlots);
-    if (newSlots.has(slot)) {
-      newSlots.delete(slot);
-    } else {
-      newSlots.add(slot);
+  // Charger les disponibilités existantes
+  useEffect(() => {
+    const fetchAvailability = async () => {
+      setIsLoading(true);
+      try {
+        const response = await fetch(
+          `/api/availability?professionalId=${professionalId}`
+        );
+        if (response.ok) {
+          const data = await response.json();
+          setAvailability(data);
+        }
+      } catch (error) {
+        console.error("Error fetching availability:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (professionalId) {
+      fetchAvailability();
     }
-    setSelectedSlots(newSlots);
+  }, [professionalId]);
+
+  const days: Day[] = [
+    { key: "monday", label: "Monday" },
+    { key: "tuesday", label: "Tuesday" },
+    { key: "wednesday", label: "Wednesday" },
+    { key: "thursday", label: "Thursday" },
+    { key: "friday", label: "Friday" },
+    { key: "saturday", label: "Saturday" },
+    { key: "sunday", label: "Sunday" },
+  ];
+
+  const timeOptions: TimeOption[] = [];
+  for (let hour = 0; hour < 24; hour++) {
+    for (let minute = 0; minute < 60; minute += 30) {
+      const time = `${hour.toString().padStart(2, "0")}:${minute
+        .toString()
+        .padStart(2, "0")}`;
+      const displayTime = formatTime(time);
+      timeOptions.push({ value: time, label: displayTime });
+    }
+  }
+
+  function formatTime(time: string): string {
+    const [hours, minutes] = time.split(":");
+    const hour = parseInt(hours);
+    const ampm = hour >= 12 ? "PM" : "AM";
+    const displayHour = hour % 12 || 12;
+    return `${displayHour}:${minutes} ${ampm}`;
+  }
+
+  const toggleDay = (day: keyof WeeklyAvailability): void => {
+    setAvailability((prev) => ({
+      ...prev,
+      [day]: {
+        ...prev[day],
+        enabled: !prev[day].enabled,
+        timeSlots: !prev[day].enabled ? [] : prev[day].timeSlots,
+      },
+    }));
   };
 
-  const handleSave = async () => {
-    try {
-      const payload = Array.from(selectedSlots).map((slot) => {
-        const [day, hour] = slot.split("-");
-        return { day, hour };
-      });
+  const addTimeSlot = (day: keyof WeeklyAvailability): void => {
+    setAvailability((prev) => ({
+      ...prev,
+      [day]: {
+        ...prev[day],
+        timeSlots: [...prev[day].timeSlots, { start: "09:00", end: "17:00" }],
+      },
+    }));
+  };
 
+  const removeTimeSlot = (
+    day: keyof WeeklyAvailability,
+    index: number
+  ): void => {
+    setAvailability((prev) => ({
+      ...prev,
+      [day]: {
+        ...prev[day],
+        timeSlots: prev[day].timeSlots.filter((_, i) => i !== index),
+      },
+    }));
+  };
+
+  const updateTimeSlot = (
+    day: keyof WeeklyAvailability,
+    index: number,
+    field: keyof TimeSlot,
+    value: string
+  ): void => {
+    setAvailability((prev) => ({
+      ...prev,
+      [day]: {
+        ...prev[day],
+        timeSlots: prev[day].timeSlots.map((slot, i) =>
+          i === index ? { ...slot, [field]: value } : slot
+        ),
+      },
+    }));
+  };
+
+  const handleSave = async (): Promise<void> => {
+    setIsSaving(true);
+    try {
       const response = await fetch("/api/availability", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
-          professionalId: professionalId,
-          slots: payload,
+          professionalId,
+          availability,
         }),
       });
+      console.log(availability);
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Une erreur est survenue");
-      }
-
-      setSuccess(true);
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message);
+      if (response.ok) {
+        const result = await response.json();
+        toast({
+          title: "Succès !",
+          description: `Disponibilités sauvegardées avec succès! ${result.count} créneaux enregistrés.`,
+        });
       } else {
-        setError("Une erreur est survenue lors de la sauvegarde");
+        const error = await response.json();
+        toast({
+          variant: "destructive",
+          title: "Erreur",
+          description: `Erreur lors de la sauvegarde: ${error.error}`,
+        });
       }
+    } catch (error) {
+      console.error("Error saving availability:", error);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Erreur lors de la sauvegarde des disponibilités.",
+      });
     } finally {
-      setLoading(false);
+      setIsSaving(false);
     }
   };
 
-  return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h3 className="text-xl font-bold text-black">Mes disponibilités</h3>
-        <Button
-          icon={Check}
-          onClick={handleSave}
-          className={loading ? "opacity-50 pointer-events-none" : ""}
+  const TimeSelector: React.FC<TimeSelectorProps> = ({
+    value,
+    onChange,
+    placeholder,
+    dropdownId,
+  }) => {
+    const isOpen = openDropdown === dropdownId;
+
+    return (
+      <div className="relative">
+        <button
+          onClick={() => setOpenDropdown(isOpen ? null : dropdownId)}
+          className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl hover:border-blue-300 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 flex items-center justify-between min-w-28"
         >
-          {loading ? "Sauvegarde..." : "Sauvegarder"}
-        </Button>
+          <span className="text-gray-800 font-medium">
+            {value ? formatTime(value) : placeholder}
+          </span>
+          <ChevronDown
+            className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${
+              isOpen ? "rotate-180" : ""
+            }`}
+          />
+        </button>
+
+        {isOpen && (
+          <div className="absolute z-50 mt-2 w-full bg-white border border-gray-200 rounded-xl shadow-xl max-h-60 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+            <div className="p-2">
+              {timeOptions.map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => {
+                    onChange(option.value);
+                    setOpenDropdown(null);
+                  }}
+                  className={`w-full px-4 py-3 text-left rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors duration-150 ${
+                    value === option.value
+                      ? "bg-blue-100 text-blue-700 font-medium"
+                      : "text-gray-700"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
+    );
+  };
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg">
-          {error}
-        </div>
-      )}
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (openDropdown && !target.closest(".relative")) {
+        setOpenDropdown(null);
+      }
+    };
 
-      {success && (
-        <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-lg">
-          Vos disponibilités ont été enregistrées avec succès !
-        </div>
-      )}
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [openDropdown]);
 
-      <Card>
-        <div className="overflow-x-auto">
-          <div className="grid grid-cols-8 gap-2 min-w-max">
-            <div></div>
-            {days.map((day) => (
-              <div
-                key={day}
-                className="text-center font-medium text-gray-700 p-2"
-              >
-                {day}
-              </div>
-            ))}
-
-            {hours.map((hour) => (
-              <React.Fragment key={hour}>
-                <div className="text-sm text-gray-600 p-2 text-right">
-                  {hour}
-                </div>
-                {days.map((day) => {
-                  const slot = `${day}-${hour}`;
-                  const isSelected = selectedSlots.has(slot);
-                  return (
-                    <button
-                      key={slot}
-                      onClick={() => !loading && toggleSlot(day, hour)}
-                      className={`p-2 rounded-xl border-2 transition-all duration-200 ${
-                        isSelected
-                          ? "bg-black border-black text-white"
-                          : "bg-white border-gray-200 hover:border-gray-300"
-                      } ${loading ? "opacity-50 pointer-events-none" : ""}`}
-                    >
-                      <Clock size={16} className="mx-auto" />
-                    </button>
-                  );
-                })}
-              </React.Fragment>
-            ))}
+  if (isLoading) {
+    return (
+      <div className="w-full">
+        <div className="max-w-4xl mx-auto p-6 bg-gradient-to-br from-gray-50 to-white">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Chargement des disponibilités...</p>
+            </div>
           </div>
         </div>
-      </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full">
+      <div className="max-w-4xl mx-auto p-6 bg-gradient-to-br from-gray-50 to-white">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Availability Settings
+          </h1>
+          <p className="text-gray-600">
+            Set your weekly schedule and available time slots
+          </p>
+        </div>
+
+        <div className="space-y-6">
+          {days.map(({ key, label }) => (
+            <div
+              key={key}
+              className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-gray-900">{label}</h3>
+                <div className="flex items-center space-x-3">
+                  <span
+                    className={`text-sm font-medium ${
+                      availability[key].enabled
+                        ? "text-green-600"
+                        : "text-gray-500"
+                    }`}
+                  >
+                    {availability[key].enabled ? "Available" : "Unavailable"}
+                  </span>
+                  <button
+                    onClick={() => toggleDay(key)}
+                    className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                      availability[key].enabled
+                        ? "bg-gradient-to-r from-blue-500 to-blue-600"
+                        : "bg-gray-300"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform shadow-lg ${
+                        availability[key].enabled
+                          ? "translate-x-6"
+                          : "translate-x-1"
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+
+              {availability[key].enabled && (
+                <div className="space-y-4">
+                  {availability[key].timeSlots.map((slot, index) => (
+                    <div
+                      key={index}
+                      className="bg-gray-50 p-4 rounded-xl border border-gray-100"
+                    >
+                      <div className="flex items-center space-x-4">
+                        <div className="flex items-center space-x-2 text-gray-600">
+                          <Clock className="w-5 h-5" />
+                          <span className="text-sm font-medium">
+                            Time slot {index + 1}
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => removeTimeSlot(key, index)}
+                          className="ml-auto p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-red-500"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      <div className="mt-4 flex items-center space-x-4">
+                        <TimeSelector
+                          value={slot.start}
+                          onChange={(value) =>
+                            updateTimeSlot(key, index, "start", value)
+                          }
+                          placeholder="Start time"
+                          dropdownId={`${key}-${index}-start`}
+                        />
+
+                        <div className="flex-shrink-0">
+                          <div className="w-8 h-0.5 bg-gray-300 rounded-full"></div>
+                        </div>
+
+                        <TimeSelector
+                          value={slot.end}
+                          onChange={(value) =>
+                            updateTimeSlot(key, index, "end", value)
+                          }
+                          placeholder="End time"
+                          dropdownId={`${key}-${index}-end`}
+                        />
+                      </div>
+                    </div>
+                  ))}
+
+                  <button
+                    onClick={() => addTimeSlot(key)}
+                    className="w-full flex items-center justify-center space-x-2 px-4 py-4 text-blue-600 bg-blue-50 hover:bg-blue-100 border-2 border-dashed border-blue-200 hover:border-blue-300 rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <Plus className="w-5 h-5" />
+                    <span className="font-medium">Add time slot</span>
+                  </button>
+
+                  {availability[key].timeSlots.length === 0 && (
+                    <div className="text-center py-8 text-gray-500">
+                      <Clock className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                      <p className="text-sm">No time slots added yet</p>
+                      <p className="text-xs mt-1">
+                        Click &quot;Add time slot&quot; to set your availability
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-8 pt-6 border-t border-gray-200">
+          <div className="flex flex-col sm:flex-row sm:justify-end space-y-3 sm:space-y-0 sm:space-x-3">
+            <button
+              onClick={() => {
+                setAvailability({
+                  monday: { enabled: false, timeSlots: [] },
+                  tuesday: { enabled: false, timeSlots: [] },
+                  wednesday: { enabled: false, timeSlots: [] },
+                  thursday: { enabled: false, timeSlots: [] },
+                  friday: { enabled: false, timeSlots: [] },
+                  saturday: { enabled: false, timeSlots: [] },
+                  sunday: { enabled: false, timeSlots: [] },
+                });
+              }}
+              className="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 font-medium"
+            >
+              Reset All
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={isSaving}
+              className={`px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 font-medium shadow-lg hover:shadow-xl ${
+                isSaving ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+            >
+              {isSaving ? "Saving..." : "Save Availability"}
+            </button>
+          </div>
+        </div>
+      </div>
+      <Toaster />
     </div>
   );
 };
@@ -1203,7 +1500,9 @@ const ProfessionalDashboard = ({ params }: Props) => {
       <div className="flex-1 lg:ml-0">
         <Topbar username={userName} onMenuClick={() => setIsMobileOpen(true)} />
 
-        <main className="p-6">{renderSection()}</main>
+        <main className="pt-20 p-6 h-screen overflow-y-auto">
+          {renderSection()}
+        </main>
       </div>
     </div>
   );
