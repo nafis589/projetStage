@@ -113,7 +113,7 @@ interface SidebarProps {
 }
 
 interface TopbarProps {
-  title: string;
+  username: string;
   onMenuClick: () => void;
 }
 
@@ -248,31 +248,34 @@ const Sidebar: React.FC<SidebarProps> = ({
     { id: "bookings", label: "Réservations", icon: BookOpen },
     { id: "payments", label: "Paiements", icon: CreditCard },
     { id: "settings", label: "Paramètres", icon: Settings },
-    { id: "logout", label: "Déconnexion", icon: LogOut },
   ];
+
+  const logoutItem = { id: "logout", label: "Déconnexion", icon: LogOut };
 
   return (
     <>
       {/* Mobile Overlay */}
       {isMobileOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          className="fixed inset-0 bg-transparent bg-opacity-50 z-40 lg:hidden"
           onClick={() => setIsMobileOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <div
-        className={`fixed left-0 top-0 h-full w-64 bg-white shadow-lg z-50 transform transition-transform duration-300 lg:translate-x-0 ${
+        className={`fixed left-0 top-0 h-screen w-64 bg-white shadow-lg z-50 transform transition-transform duration-300 lg:translate-x-0 ${
           isMobileOpen ? "translate-x-0" : "-translate-x-full"
-        } lg:relative lg:shadow-none`}
+        } lg:relative lg:shadow-none flex flex-col`}
       >
-        <div className="p-6">
+        {/* Header */}
+        <div className="p-6 flex-shrink-0">
           <h1 className="text-2xl font-bold text-black">Geservice</h1>
           <p className="text-gray-500 text-sm">Dashboard</p>
         </div>
 
-        <nav className="px-4">
+        {/* Navigation principale */}
+        <nav className="px-4 flex-1 overflow-y-auto">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeSection === item.id;
@@ -296,21 +299,48 @@ const Sidebar: React.FC<SidebarProps> = ({
             );
           })}
         </nav>
+
+        {/* Bouton de déconnexion en bas */}
+        <div className="p-4 flex-shrink-0 border-t border-gray-100">
+          <button
+            onClick={() => {
+              setActiveSection(logoutItem.id);
+              setIsMobileOpen(false);
+            }}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200 ${
+              activeSection === logoutItem.id
+                ? "bg-red-500 text-white"
+                : "text-red-600 hover:bg-red-50 bg-red-50/50"
+            }`}
+          >
+            <LogOut size={20} />
+            <span className="font-medium">{logoutItem.label}</span>
+          </button>
+        </div>
       </div>
     </>
   );
 };
 
 // Topbar Component
-const Topbar: React.FC<TopbarProps> = ({ title, onMenuClick }) => (
-  <div className="bg-white shadow-sm px-6 py-4 flex items-center justify-between lg:justify-start">
-    <button
-      onClick={onMenuClick}
-      className="lg:hidden p-2 hover:bg-gray-100 rounded-xl"
-    >
-      <Home size={20} />
-    </button>
-    <h2 className="text-2xl font-bold text-black">{title}</h2>
+const Topbar: React.FC<TopbarProps> = ({ username, onMenuClick }) => (
+  <div className="bg-white shadow-sm px-6 py-4 flex items-center justify-between">
+    <div className="flex items-center gap-4">
+      <button
+        onClick={onMenuClick}
+        className="lg:hidden p-2 hover:bg-gray-100 rounded-xl"
+      >
+        <Home size={20} />
+      </button>
+      <h2 className="text-2xl font-bold text-black">Bienvenu, {username}</h2>
+    </div>
+
+    {/* Profil circulaire */}
+    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-md cursor-pointer hover:shadow-lg transition-shadow">
+      <span className="text-white font-bold text-2xl">
+        {username ? username.charAt(0).toUpperCase() : "U"}
+      </span>
+    </div>
   </div>
 );
 
@@ -1098,6 +1128,7 @@ const ProfessionalDashboard = ({ params }: Props) => {
   const [activeSection, setActiveSection] = useState("dashboard");
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const { id: professionalId } = React.use(params);
+  const [userName, setUserName] = useState("");
   useEffect(() => {
     if (status === "loading") return;
 
@@ -1111,22 +1142,30 @@ const ProfessionalDashboard = ({ params }: Props) => {
     }
   }, [session, status, router]);
 
+  useEffect(() => {
+    const fetchUserName = async () => {
+      try {
+        const response = await fetch(`/api/professionals/${professionalId}`);
+        if (!response.ok) {
+          throw new Error("Failed to fetch user data");
+        }
+        const data = await response.json();
+        console.log("it is:", data);
+        setUserName(data[0].firstname);
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+        setUserName("Utilisateur");
+      }
+    };
+
+    if (professionalId) {
+      fetchUserName();
+    }
+  }, [professionalId]);
+
   if (status === "loading") {
     return <div>Chargement...</div>;
   }
-
-  const getSectionTitle = (section: string): string => {
-    const titles: Record<string, string> = {
-      dashboard: "Dashboard",
-      profile: "Mon profil",
-      services: "Mes services",
-      availability: "Mes disponibilités",
-      bookings: "Réservations",
-      payments: "Paiements",
-      settings: "Paramètres",
-    };
-    return titles[section] || "Dashboard";
-  };
 
   const renderSection = (): React.ReactNode => {
     switch (activeSection) {
@@ -1162,10 +1201,7 @@ const ProfessionalDashboard = ({ params }: Props) => {
       />
 
       <div className="flex-1 lg:ml-0">
-        <Topbar
-          title={getSectionTitle(activeSection)}
-          onMenuClick={() => setIsMobileOpen(true)}
-        />
+        <Topbar username={userName} onMenuClick={() => setIsMobileOpen(true)} />
 
         <main className="p-6">{renderSection()}</main>
       </div>
