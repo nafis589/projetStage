@@ -2,12 +2,13 @@
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import React, {useState} from "react";
+import React, { useState } from "react";
 import Link from "next/link";
-import {signIn} from 'next-auth/react'
+import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import useLoading from "@/hooks/useLoading";
+import { LogIn } from "lucide-react";
 
 const LoginForm = () => {
   const router = useRouter();
@@ -26,17 +27,19 @@ const LoginForm = () => {
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>):Promise<void>=>{
+  const handleSubmit = async (
+    e: React.FormEvent<HTMLFormElement>
+  ): Promise<void> => {
     e.preventDefault();
     setLoading(true);
-    try{
-      const result = await signIn('credentials', {
+    try {
+      const result = await signIn("credentials", {
         email: user.email,
         password: user.password,
         redirect: false,
       });
 
-      if(result?.error){
+      if (result?.error) {
         console.log("pourquoi le toast ne s'affiche pas?");
         toast({
           variant: "destructive",
@@ -44,50 +47,51 @@ const LoginForm = () => {
           description: "Email ou mot de passe incorrect",
         });
         setLoading(false);
-        return ;
+        return;
       }
-      
-      const response = await fetch('/api', {
-        method: 'GET',
+
+      const response = await fetch("/api", {
+        method: "GET",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       });
 
-      if(response.ok){
+      if (response.ok) {
         const userData = await response.json();
         console.log(userData);
-        if(userData.role === 'client'){
-          router.push('/dashboard/client');
-        }else{
+        if (userData.role === "client") {
+          router.push("/dashboard/client");
+        } else {
           router.push(`/dashboard/professional/${userData.id}`);
         }
       }
-      
-    } catch(error){
-      console.error('Erreur lors de la connexion', error);
+    } catch (error) {
+      console.error("Erreur lors de la connexion", error);
       toast({
-        variant: 'destructive',
-        title:'Erreur',
-        description: 'Une erreur est survenue lors de la connexion',
-      })
+        variant: "destructive",
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la connexion",
+      });
     } finally {
       setLoading(false);
     }
-  }
+  };
   return (
     <>
       <header className="bg-black text-white px-6 py-4 fixed w-full top-0 z-50">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           {/* Logo */}
-          <div className="text-2xl font-bold"><Link href="/">Geservice</Link></div>
+          <div className="text-2xl font-bold">
+            <Link href="/">Geservice</Link>
+          </div>
         </div>
       </header>
       <section className="flex min-h-screen bg-zinc-50 px-4 py-16 md:py-32 dark:bg-transparent">
         <form
           onSubmit={handleSubmit}
           action=""
-          className="bg-muted m-auto h-fit w-full max-w-sm overflow-hidden rounded-3xl border shadow-md shadow-zinc-950/5 dark:[--color-muted:var(--color-zinc-900)]"
+          className="bg-muted m-auto h-fit w-full max-w-sm overflow-hidden rounded-3xl shadow-md shadow-zinc-950/5 dark:[--color-muted:var(--color-zinc-900)]"
         >
           <div className="bg-card -m-px rounded-[calc(var(--radius)+.125rem)] border p-8 pb-6">
             <div className="text-center">
@@ -96,7 +100,9 @@ const LoginForm = () => {
                 aria-label="go home"
                 className="mx-auto text-2xl font-bold block w-fit"
               >
-                <h1>Geservice</h1>
+                <h1>
+                  <LogIn size={48} />
+                </h1>
               </Link>
               <h1 className="mb-1 mt-4 text-xl font-semibold">
                 Sign In to Geservice
@@ -109,7 +115,14 @@ const LoginForm = () => {
                 <Label htmlFor="email" className="block text-sm">
                   Username
                 </Label>
-                <Input type="email" required name="email" id="email" value={user.email} onChange={handleChange}/>
+                <Input
+                  type="email"
+                  required
+                  name="email"
+                  id="email"
+                  value={user.email}
+                  onChange={handleChange}
+                />
               </div>
 
               <div className="space-y-0.5">
@@ -144,7 +157,7 @@ const LoginForm = () => {
               <Button type="button" variant="outline">
                 Annuler
               </Button>
-              <Button type="submit" variant="outline">
+              <Button type="submit" variant="default">
                 se connecter
               </Button>
             </div>
