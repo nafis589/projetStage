@@ -61,7 +61,7 @@ const LoginForm = () => {
         const userData = await response.json();
         console.log(userData);
         if (userData.role === "client") {
-          router.push("/dashboard/client");
+          router.push(`/dashboard/client/${userData.id}`);
         } else {
           router.push(`/dashboard/professional/${userData.id}`);
         }

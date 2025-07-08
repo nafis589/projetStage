@@ -1,31 +1,26 @@
 "use client";
-import { useEffect } from 'react';
-import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
-
-
+import { useEffect } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 export default function ClientDashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
-  
-  
-
   useEffect(() => {
-    if (status === 'loading') return;
+    if (status === "loading") return;
 
     if (!session) {
-      router.push('/login');
+      router.push("/login");
       return;
     }
 
-    if (session.user.role !== 'client') {
-      router.push('/dashboard/professional');
+    if (session.user.role !== "client") {
+      router.push("/dashboard/professional");
     }
   }, [session, status, router]);
 
-  if (status === 'loading') {
+  if (status === "loading") {
     return <div>Chargement...</div>;
   }
 
