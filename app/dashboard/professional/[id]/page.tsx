@@ -1435,7 +1435,7 @@ const ProfessionalDashboard = ({ params }: Props) => {
       return;
     }
 
-    if (session.user.role !== "professional") {
+    if (session.user && session.user.role !== "professional") {
       router.push("/dashboard/client");
     }
   }, [session, status, router]);
