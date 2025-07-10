@@ -1,5 +1,5 @@
 "use client";
-import React, { Fragment, useEffect, useState } from "react";
+import React, { Fragment, useEffect, useState, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
@@ -11,7 +11,7 @@ import {
   Briefcase,
   Calendar,
   BookOpen,
-  CreditCard,
+  MapPin,
   Settings,
   LogOut,
   Plus,
@@ -24,7 +24,10 @@ import {
   Globe,
   Shield,
   ChevronDown,
+  Navigation,
+  Search,
 } from "lucide-react";
+import type { Map, Marker, MapMouseEvent } from "maplibre-gl";
 
 // Types
 
@@ -90,14 +93,6 @@ interface Booking {
   amount: string;
 }
 
-interface Payment {
-  date: string;
-  client: string;
-  service: string;
-  amount: string;
-  status: "Reçu" | "En attente";
-}
-
 interface Profile {
   firstname: string;
   lastname: string;
@@ -129,6 +124,7 @@ interface ButtonProps {
   variant?: "primary" | "secondary" | "danger";
   className?: string;
   icon?: React.ComponentType<{ size: number }>;
+  disabled?: boolean;
 }
 
 interface TableAction {
@@ -196,6 +192,7 @@ export const Button: React.FC<ButtonProps> = ({
   variant = "primary",
   className = "",
   icon: Icon,
+  disabled,
 }) => {
   const baseClasses =
     "px-6 py-3 rounded-2xl shadow-md font-medium transition-all duration-200 flex items-center gap-2";
@@ -208,7 +205,10 @@ export const Button: React.FC<ButtonProps> = ({
   return (
     <button
       onClick={onClick}
-      className={`${baseClasses} ${variants[variant]} ${className}`}
+      disabled={disabled}
+      className={`${baseClasses} ${variants[variant]} ${
+        disabled ? "opacity-50 cursor-not-allowed" : ""
+      } ${className || ""}`}
     >
       {Icon && <Icon size={18} />}
       {children}
@@ -284,7 +284,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     { id: "services", label: "Mes services", icon: Briefcase },
     { id: "availability", label: "Mes disponibilités", icon: Calendar },
     { id: "bookings", label: "Réservations", icon: BookOpen },
-    { id: "payments", label: "Paiements", icon: CreditCard },
+    { id: "location", label: "Localisation", icon: MapPin },
     { id: "settings", label: "Paramètres", icon: Settings },
   ];
 
@@ -410,7 +410,6 @@ const Dashboard: React.FC = () => (
             <p className="text-gray-500 text-sm">Revenus ce mois</p>
             <p className="text-3xl font-bold text-black">€2,450</p>
           </div>
-          <CreditCard className="text-gray-400" size={32} />
         </div>
       </Card>
       <Card>
@@ -1271,74 +1270,7 @@ const Bookings: React.FC = () => {
   );
 };
 
-const Payments: React.FC = () => {
-  const payments: Payment[] = [
-    {
-      date: "15 Jan 2025",
-      client: "Marie Dubois",
-      service: "Ménage",
-      amount: "50€",
-      status: "Reçu",
-    },
-    {
-      date: "12 Jan 2025",
-      client: "Paul Durand",
-      service: "Jardinage",
-      amount: "75€",
-      status: "Reçu",
-    },
-    {
-      date: "10 Jan 2025",
-      client: "Anne Petit",
-      service: "Bricolage",
-      amount: "100€",
-      status: "En attente",
-    },
-    {
-      date: "08 Jan 2025",
-      client: "Marc Roux",
-      service: "Ménage",
-      amount: "50€",
-      status: "Reçu",
-    },
-  ];
 
-  const paymentsData = payments.map((payment) => ({
-    date: payment.date,
-    client: payment.client,
-    service: payment.service,
-    amount: payment.amount,
-    status: payment.status,
-  }));
-
-  return (
-    <div className="space-y-6">
-      <h3 className="text-xl font-bold text-black">Historique des paiements</h3>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
-          <p className="text-gray-500 text-sm">Total ce mois</p>
-          <p className="text-3xl font-bold text-black">€2,450</p>
-        </Card>
-        <Card>
-          <p className="text-gray-500 text-sm">En attente</p>
-          <p className="text-3xl font-bold text-black">€100</p>
-        </Card>
-        <Card>
-          <p className="text-gray-500 text-sm">Taux de commission</p>
-          <p className="text-3xl font-bold text-black">12%</p>
-        </Card>
-      </div>
-
-      <Card>
-        <Table
-          headers={["Date", "Client", "Service", "Montant", "Statut"]}
-          data={paymentsData}
-        />
-      </Card>
-    </div>
-  );
-};
 
 const SettingsPage: React.FC = () => {
   const [notifications, setNotifications] = useState<{
@@ -1420,6 +1352,364 @@ const SettingsPage: React.FC = () => {
   );
 };
 
+// Location Tab Component
+const LocationTab: React.FC<{ professionalId: string }> = ({
+  professionalId,
+}) => {
+  const { toast } = useToast();
+  const [isClient, setIsClient] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [location, setLocation] = useState({
+    address: "",
+    latitude: 6.1319, // Lomé par défaut
+    longitude: 1.2228,
+  });
+
+  const mapContainer = useRef<HTMLDivElement>(null);
+  const map = useRef<Map | null>(null);
+  const marker = useRef<Marker | null>(null);
+
+  // Ensure component only renders on client side
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  // Load existing location
+  useEffect(() => {
+    const fetchLocation = async () => {
+      setIsLoading(true);
+      try {
+        const response = await fetch(
+          `/api/pro/location?userId=${professionalId}`
+        );
+        if (response.ok) {
+          const data = await response.json();
+          if (data) {
+            setLocation({
+              address: data.address || "",
+              latitude: data.latitude || 6.1319,
+              longitude: data.longitude || 1.2228,
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching location:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (professionalId) {
+      fetchLocation();
+    }
+  }, [professionalId]);
+
+  // Initialize map
+  useEffect(() => {
+    if (!isClient || !mapContainer.current || map.current) return;
+
+    const initializeMap = async () => {
+      const maplibregl = (await import("maplibre-gl")).default;
+
+      map.current = new maplibregl.Map({
+        container: mapContainer.current!,
+        style: {
+          version: 8,
+          sources: {
+            osm: {
+              type: "raster",
+              tiles: [
+                "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                "https://b.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                "https://c.tile.openstreetmap.org/{z}/{x}/{y}.png",
+              ],
+              tileSize: 256,
+              attribution: "© OpenStreetMap contributors",
+            },
+          },
+          layers: [
+            {
+              id: "osm",
+              type: "raster",
+              source: "osm",
+            },
+          ],
+        },
+        center: [location.longitude, location.latitude],
+        zoom: 13,
+        attributionControl: false,
+      });
+
+      // Add navigation controls
+      map.current.addControl(new maplibregl.NavigationControl(), "top-right");
+
+      // Add draggable marker
+      marker.current = new maplibregl.Marker({
+        color: "#22c55e",
+        draggable: true,
+      })
+        .setLngLat([location.longitude, location.latitude])
+        .addTo(map.current);
+
+      // Update location when marker is dragged
+      const currentMarker = marker.current;
+      const currentMap = map.current;
+      if (currentMarker && currentMap) {
+        currentMarker.on("dragend", () => {
+          const lngLat = currentMarker.getLngLat();
+          setLocation((prev) => ({
+            ...prev,
+            latitude: lngLat.lat,
+            longitude: lngLat.lng,
+          }));
+        });
+        currentMap.on("click", (e: MapMouseEvent) => {
+          const { lng, lat } = e.lngLat;
+          currentMarker.setLngLat([lng, lat]);
+          setLocation((prev) => ({
+            ...prev,
+            latitude: lat,
+            longitude: lng,
+          }));
+        });
+      }
+
+      // Add click event to map
+    };
+
+    initializeMap();
+
+    return () => {
+      if (map.current) {
+        map.current.remove();
+        map.current = null;
+      }
+    };
+  }, [isClient, location.latitude, location.longitude]);
+
+  // Update marker position when location changes
+  useEffect(() => {
+    if (marker.current && map.current) {
+      marker.current.setLngLat([location.longitude, location.latitude]);
+      map.current.setCenter([location.longitude, location.latitude]);
+    }
+  }, [location.latitude, location.longitude]);
+
+  const handleUseCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description:
+          "La géolocalisation n'est pas supportée par votre navigateur.",
+      });
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setLocation((prev) => ({
+          ...prev,
+          latitude,
+          longitude,
+        }));
+        toast({
+          variant: "success",
+          title: "Position détectée !",
+          description: "Votre position actuelle a été utilisée.",
+        });
+      },
+      (error) => {
+        toast({
+          variant: "destructive",
+          title: "Erreur de géolocalisation",
+          description: `Impossible d'obtenir votre position actuelle. ${error.message}`,
+        });
+      }
+    );
+  };
+
+  const handleSaveLocation = async () => {
+    setIsSaving(true);
+    try {
+      const response = await fetch("/api/pro/location", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: professionalId,
+          address: location.address,
+          latitude: location.latitude,
+          longitude: location.longitude,
+        }),
+      });
+
+      if (response.ok) {
+        toast({
+          variant: "success",
+          title: "Localisation sauvegardée !",
+          description:
+            "Votre position professionnelle a été enregistrée avec succès.",
+        });
+      } else {
+        throw new Error("Failed to save location");
+      }
+    } catch (error) {
+      console.error("Error saving location:", error);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Erreur lors de la sauvegarde de la localisation.",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (!isClient || isLoading) {
+    return (
+      <div className="space-y-6">
+        <h3 className="text-xl font-bold text-black">Localisation</h3>
+        <Card>
+          <div className="flex items-center justify-center h-96 text-gray-500">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Chargement de la localisation...</p>
+            </div>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-3 mb-6">
+        <MapPin className="text-green-600" size={28} />
+        <h3 className="text-xl font-bold text-black">
+          Définir ma position professionnelle
+        </h3>
+      </div>
+
+      <Card className="p-8">
+        <div className="space-y-6">
+          {/* Search Address */}
+          <div className="relative">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Rechercher une adresse
+            </label>
+            <div className="relative">
+              <Search
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                size={20}
+              />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Tapez une adresse..."
+                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              />
+            </div>
+          </div>
+
+          {/* Address Input */}
+          <Input
+            label="Adresse complète"
+            value={location.address}
+            onChange={(e) =>
+              setLocation((prev) => ({ ...prev, address: e.target.value }))
+            }
+            placeholder="Entrez votre adresse professionnelle"
+          />
+
+          {/* Coordinates Display */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Latitude
+              </label>
+              <input
+                type="number"
+                value={location.latitude.toFixed(6)}
+                onChange={(e) =>
+                  setLocation((prev) => ({
+                    ...prev,
+                    latitude: parseFloat(e.target.value) || 0,
+                  }))
+                }
+                step="0.000001"
+                className="w-full px-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-gray-50"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Longitude
+              </label>
+              <input
+                type="number"
+                value={location.longitude.toFixed(6)}
+                onChange={(e) =>
+                  setLocation((prev) => ({
+                    ...prev,
+                    longitude: parseFloat(e.target.value) || 0,
+                  }))
+                }
+                step="0.000001"
+                className="w-full px-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-gray-50"
+              />
+            </div>
+          </div>
+
+          {/* Current Location Button */}
+          <Button
+            variant="primary"
+            icon={Navigation}
+            onClick={handleUseCurrentLocation}
+            className="w-full md:w-auto"
+          >
+            Utiliser ma position actuelle
+          </Button>
+
+          {/* Map Container */}
+          <div className="relative">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Carte interactive
+            </label>
+            <div className="bg-white border-2 border-gray-200 rounded-2xl overflow-hidden shadow-lg">
+              <div
+                ref={mapContainer}
+                className="w-full h-96"
+                style={{ minHeight: "400px" }}
+              />
+            </div>
+            <p className="text-sm text-gray-500 mt-2">
+              Cliquez sur la carte ou déplacez le marqueur pour définir votre
+              position
+            </p>
+          </div>
+
+          {/* Save Button */}
+          <div className="flex justify-end pt-4">
+            <Button
+              icon={Check}
+              onClick={handleSaveLocation}
+              disabled={isSaving}
+            >
+              {isSaving ? "Enregistrement..." : "Enregistrer ma localisation"}
+            </Button>
+          </div>
+        </div>
+      </Card>
+      <Toaster />
+    </div>
+  );
+};
+
 const ProfessionalDashboard = ({ params }: Props) => {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -1477,8 +1767,8 @@ const ProfessionalDashboard = ({ params }: Props) => {
         return <Availability professionalId={professionalId} />;
       case "bookings":
         return <Bookings />;
-      case "payments":
-        return <Payments />;
+      case "location":
+        return <LocationTab professionalId={professionalId} />;
       case "settings":
         return <SettingsPage />;
       case "logout":
