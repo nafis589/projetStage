@@ -1382,15 +1382,15 @@ const LocationTab: React.FC<{ professionalId: string }> = ({
       setIsLoading(true);
       try {
         const response = await fetch(
-          `/api/pro/location?userId=${professionalId}`
+          `/api/location?userId=${professionalId}`
         );
         if (response.ok) {
           const data = await response.json();
           if (data) {
             setLocation({
               address: data.address || "",
-              latitude: data.latitude || 6.1319,
-              longitude: data.longitude || 1.2228,
+              latitude: parseFloat(data.latitude) || 6.1319,
+              longitude: parseFloat(data.longitude) || 1.2228,
             });
           }
         }
@@ -1535,7 +1535,7 @@ const LocationTab: React.FC<{ professionalId: string }> = ({
   const handleSaveLocation = async () => {
     setIsSaving(true);
     try {
-      const response = await fetch("/api/pro/location", {
+      const response = await fetch("/api/location", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
