@@ -1202,7 +1202,12 @@ const Bookings: React.FC = () => {
       <div className="space-y-6">
         <h3 className="text-xl font-bold text-black">Réservations</h3>
         <Card>
-          <p>Chargement des réservations...</p>
+          <div className="flex items-center justify-center h-96 text-gray-500">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Chargement des réservations...</p>
+            </div>
+          </div>
         </Card>
       </div>
     );
