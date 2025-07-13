@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { Star, Clock } from "lucide-react";
 import ProfessionalDetailsModal from "./ProfessionalDetailsModal";
+import { useToast } from "@/hooks/use-toast";
 
 interface Professional {
   id: number;
@@ -24,15 +25,18 @@ interface SearchResultsProps {
   professionals: Professional[];
   onProfessionalSelect: (professional: Professional | null) => void;
   selectedProfessional: Professional | null;
+  userLocation: { lat: number; lng: number } | null;
 }
 
 const SearchResults: React.FC<SearchResultsProps> = ({
   professionals,
   onProfessionalSelect,
   selectedProfessional,
+  userLocation,
 }) => {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedProfessionalForModal, setSelectedProfessionalForModal] = useState<Professional | null>(null);
+  const { toast } = useToast();
 
   const handleViewDetails = (professional: Professional) => {
     setSelectedProfessionalForModal(professional);
@@ -110,9 +114,43 @@ const SearchResults: React.FC<SearchResultsProps> = ({
                     Voir détails
                   </button>
                   <button
-                    onClick={(e) => {
+                    onClick={async (e) => {
                       e.stopPropagation();
-                      // Handle booking logic
+                      if (!userLocation) {
+                        alert("Impossible de déterminer votre position pour la réservation.");
+                        return;
+                      }
+                      try {
+                        const response = await fetch('/api/bookings', {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                          },
+                          body: JSON.stringify({
+                            professional_id: professional.id,
+                            service: professional.profession,
+                            price: professional.min_price,
+                            location: JSON.stringify(userLocation),
+                          }),
+                        });
+                        if (response.ok) {
+                          toast({
+                            variant: "success",
+                            title: "Succès !",
+                            description: "Reservations éffectué avec succès!.",
+                          });
+                        } else {
+                          const errorData = await response.json();
+                          toast({
+                            variant: "destructive",
+                            title: "Erreur",
+                            description: `Erreur lors de la réservation ${errorData.error}`,
+                          });
+                        }
+                      } catch (error) {
+                        console.error('Error during booking:', error);
+                        alert('Une erreur est survenue lors de la réservation.');
+                      }
                     }}
                     className="w-full px-3 py-1.5 text-sm font-medium text-white bg-black rounded-lg hover:bg-gray-800 transition-colors"
                   >

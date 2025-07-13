@@ -86,11 +86,16 @@ interface Service {
 }
 
 interface Booking {
-  client: string;
+  id: number;
+  client_id: number;
+  professional_id: number;
   service: string;
-  date: string;
-  status: "Confirmée" | "En attente" | "Annulée";
-  amount: string;
+  location: string;
+  booking_time: string;
+  status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
+  price: number;
+  client_firstname: string;
+  client_lastname: string;
 }
 
 interface Profile {
@@ -1127,45 +1132,40 @@ const Availability = ({ professionalId }: AvailabilityProps) => {
 };
 
 const Bookings: React.FC = () => {
-  const bookings: Booking[] = [
-    {
-      client: "Marie Dubois",
-      service: "Ménage",
-      date: "15 Jan 2025",
-      status: "Confirmée",
-      amount: "50€",
-    },
-    {
-      client: "Pierre Martin",
-      service: "Jardinage",
-      date: "16 Jan 2025",
-      status: "En attente",
-      amount: "75€",
-    },
-    {
-      client: "Sophie Bernard",
-      service: "Ménage",
-      date: "17 Jan 2025",
-      status: "Confirmée",
-      amount: "50€",
-    },
-    {
-      client: "Lucas Moreau",
-      service: "Bricolage",
-      date: "18 Jan 2025",
-      status: "Annulée",
-      amount: "100€",
-    },
-  ];
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchBookings = async () => {
+      try {
+        const response = await fetch('/api/bookings?view=professional');
+        if (response.ok) {
+          const data = await response.json();
+          setBookings(data);
+        } else {
+          console.error('Failed to fetch bookings');
+        }
+      } catch (error) {
+        console.error('Error fetching bookings:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBookings();
+  }, []);
+
 
   const getStatusColor = (status: Booking["status"]) => {
     switch (status) {
-      case "Confirmée":
+      case "completed":
         return "text-green-600 bg-green-50";
-      case "En attente":
+      case "pending":
         return "text-yellow-600 bg-yellow-50";
-      case "Annulée":
+      case "cancelled":
         return "text-red-600 bg-red-50";
+      case "confirmed":
+        return "text-blue-600 bg-blue-50";
       default:
         return "text-gray-600 bg-gray-50";
     }
@@ -1189,12 +1189,24 @@ const Bookings: React.FC = () => {
   ];
 
   const bookingsData = bookings.map((booking) => ({
-    client: booking.client,
+    id: booking.id,
+    client: `${booking.client_firstname} ${booking.client_lastname}`,
     service: booking.service,
-    date: booking.date,
-    amount: booking.amount,
+    date: new Date(booking.booking_time).toLocaleDateString('fr-FR'),
+    amount: `${booking.price}€`,
     status: booking.status,
   }));
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <h3 className="text-xl font-bold text-black">Réservations</h3>
+        <Card>
+          <p>Chargement des réservations...</p>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -1240,7 +1252,7 @@ const Bookings: React.FC = () => {
                   <td className="py-3 px-4">
                     <span
                       className={`px-3 py-1 rounded-2xl text-sm font-medium ${getStatusColor(
-                        booking.status
+                        booking.status as Booking['status']
                       )}`}
                     >
                       {booking.status}
@@ -1248,7 +1260,7 @@ const Bookings: React.FC = () => {
                   </td>
                   <td className="py-3 px-4">
                     <div className="flex gap-2">
-                      {booking.status === "En attente" &&
+                      {booking.status === "pending" &&
                         actions.map((action, actionIndex) => (
                           <button
                             key={actionIndex}

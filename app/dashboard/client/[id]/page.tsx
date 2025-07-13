@@ -527,6 +527,7 @@ export default function ClientDashboard() {
             professionals={professionals}
             selectedProfessional={selectedProfessional}
             onProfessionalSelect={setSelectedProfessional}
+            userLocation={userLocation}
           />
         )}
 

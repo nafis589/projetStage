@@ -14,9 +14,6 @@ export async function GET(request) {
   const service = searchParams.get("service");
   const latitude = parseFloat(searchParams.get("latitude"));
   const longitude = parseFloat(searchParams.get("longitude"));
-  const date = searchParams.get("date");
-  const time = searchParams.get("time");
-  const radius = parseFloat(searchParams.get("radius")) || 10; // Default search radius of 10 km
 
   if (!service || !latitude || !longitude) {
     return NextResponse.json(

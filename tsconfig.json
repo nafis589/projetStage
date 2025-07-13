@@ -32,6 +32,6 @@
     "app/api/auth/[...nextauth]/route.js",
     "app/api/route.js",
     "app/api/professionals/[id]/route.js"
-  ],
+, "app/api/bookings/route.js"  ],
   "exclude": ["node_modules"]
 }
