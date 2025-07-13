@@ -267,9 +267,7 @@ export default function ClientDashboard() {
                   : "border-transparent text-gray-500 hover:text-gray-700"
               }`}
             >
-              <div className="w-5 h-5 bg-black rounded-sm flex items-center justify-center">
-                <div className="w-2 h-2 bg-white rounded-full"></div>
-              </div>
+              
               <span className="font-medium">Reservation</span>
             </button>
             <button
@@ -317,7 +315,6 @@ export default function ClientDashboard() {
             {/* Location Inputs */}
             <div className="space-y-4 mb-4">
               <div className="relative">
-                <div className="absolute left-3 top-3 w-3 h-3 bg-black rounded-full"></div>
                 <input
                   type="text"
                   placeholder="Quel service rechercher vous?"
@@ -327,7 +324,6 @@ export default function ClientDashboard() {
                 />
               </div>
               <div className="relative">
-                <div className="absolute left-3 top-3 w-3 h-3 bg-gray-400 rounded-sm"></div>
                 <input
                   type="text"
                   placeholder="Entrez votre adresse"
