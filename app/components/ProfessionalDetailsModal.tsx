@@ -29,7 +29,7 @@ const ProfessionalDetailsModal: React.FC<ProfessionalDetailsModalProps> = ({
   onClose,
 }) => {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-transparent bg-opacity-100">
       <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
         {/* Header */}
         <div className="flex items-start justify-between p-6 border-b">

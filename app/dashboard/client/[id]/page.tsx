@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, User, Clock, Calendar } from "lucide-react";
+import { ChevronDown, User, Clock, Calendar, MapPin } from "lucide-react";
 import CustomMap from "../../../../components/CustomMap";
 import SearchResults from "../../../../app/components/SearchResults";
 
@@ -20,6 +20,8 @@ interface Professional {
     status: string;
     estimated_time: number;
   };
+  latitude?: number;
+  longitude?: number;
 }
 
 export default function ClientDashboard() {
@@ -28,6 +30,8 @@ export default function ClientDashboard() {
   const [activeTab, setActiveTab] = useState("course");
   const [pickupLocation, setPickupLocation] = useState<string>("");
   const [dropoffLocation, setDropoffLocation] = useState<string>("");
+  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [isLocating, setIsLocating] = useState<boolean>(false);
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [selectedTime, setSelectedTime] = useState<string>("");
   const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
@@ -166,59 +170,66 @@ export default function ClientDashboard() {
     setShowTimePicker(false);
   };
 
-  // Fonction de recherche
-  const handleSearch = () => {
-    // Simuler des résultats de recherche pour la démonstration
-    const mockProfessionals: Professional[] = [
-      {
-        id: 1,
-        firstname: "Jean",
-        lastname: "Dupont",
-        profession: "Plombier",
-        description: "Plombier professionnel avec 10 ans d'expérience. Spécialisé dans les installations et réparations de tous types.",
-        address: "123 Rue de la Plomberie, Lomé",
-        min_price: 45,
-        avg_rating: 4.8,
-        reviews_count: 127,
-        availability: {
-          status: "available",
-          estimated_time: 15
+  const handleGetCurrentLocation = () => {
+    setIsLocating(true);
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setUserLocation({ lat: latitude, lng: longitude });
+          // Optionally, you can use a reverse geocoding service to get the address
+          setDropoffLocation(`Position actuelle`);
+          setIsLocating(false);
+        },
+        (error) => {
+          console.error("Error getting location:", error);
+          // Handle error (e.g., show a toast notification)
+          alert("Impossible d'obtenir la position. Veuillez autoriser la géolocalisation.");
+          setIsLocating(false);
         }
-      },
-      {
-        id: 2,
-        firstname: "Marie",
-        lastname: "Martin",
-        profession: "Électricienne",
-        description: "Électricienne qualifiée, interventions rapides et travail soigné. Disponible pour tout type d'installation électrique.",
-        address: "456 Avenue de l'Électricité, Lomé",
-        min_price: 50,
-        avg_rating: 4.6,
-        reviews_count: 89,
-        availability: {
-          status: "available",
-          estimated_time: 30
-        }
-      },
-      {
-        id: 3,
-        firstname: "Paul",
-        lastname: "Bernard",
-        profession: "Jardinier",
-        description: "Jardinier passionné, création et entretien de jardins. Expert en aménagement paysager.",
-        address: "789 Boulevard des Jardins, Lomé",
-        min_price: 35,
-        avg_rating: 4.9,
-        reviews_count: 156,
-        availability: {
-          status: "available",
-          estimated_time: 45
-        }
-      }
-    ];
+      );
+    } else {
+      alert("La géolocalisation n'est pas supportée par votre navigateur.");
+      setIsLocating(false);
+    }
+  };
 
-    setProfessionals(mockProfessionals);
-    setShowResults(true);
+  // Fonction de recherche
+  const handleSearch = async () => {
+    if (!pickupLocation) {
+        alert("Veuillez entrer un service à rechercher.");
+        return;
+    }
+    if (!userLocation) {
+        alert("Veuillez fournir votre localisation.");
+        return;
+    }
+
+    const params = new URLSearchParams({
+        service: pickupLocation,
+        latitude: userLocation.lat.toString(),
+        longitude: userLocation.lng.toString(),
+    });
+
+    if (selectedDate) {
+        params.append('date', selectedDate);
+    }
+    if (selectedTime) {
+        params.append('time', selectedTime);
+    }
+
+    try {
+        const response = await fetch(`/api/professionals/search?${params.toString()}`);
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        const data = await response.json();
+        setProfessionals(data);
+        setShowResults(true);
+    } catch (error) {
+        console.error("Failed to fetch professionals:", error);
+        // Handle error, e.g., show a toast
+    }
   };
 
   useEffect(() => {
@@ -322,8 +333,21 @@ export default function ClientDashboard() {
                   placeholder="Entrez votre adresse"
                   value={dropoffLocation}
                   onChange={(e) => setDropoffLocation(e.target.value)}
+                  readOnly={!!userLocation}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
                 />
+                <button
+                  onClick={handleGetCurrentLocation}
+                  disabled={isLocating}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full hover:bg-gray-100 transition-colors"
+                  title="Utiliser ma position actuelle"
+                >
+                  {isLocating ? (
+                    <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    <MapPin size={18} className="text-gray-600" />
+                  )}
+                </button>
               </div>
             </div>
 
@@ -510,15 +534,24 @@ export default function ClientDashboard() {
         <div className={`relative transition-all duration-300 ${showResults ? 'flex-1' : 'flex-[2]'}`}>
           <CustomMap
             id="client-dashboard-map"
-            center={[1.2228, 6.1319]} // Lomé, Togo
+            center={userLocation ? [userLocation.lng, userLocation.lat] : [1.2228, 6.1319]} // Corrected to [lng, lat]
             zoom={13}
             className="w-full h-full"
-            markers={professionals.map(p => ({
-              id: p.id,
-              latitude: 1.2228 + (Math.random() - 0.5) * 0.02, // Random offset for demo
-              longitude: 6.1319 + (Math.random() - 0.5) * 0.02,
-              isSelected: selectedProfessional?.id === p.id
-            }))}
+            markers={[
+              ...professionals.map(p => ({
+                id: p.id,
+                latitude: p.latitude || 0,
+                longitude: p.longitude || 0,
+                isSelected: selectedProfessional?.id === p.id,
+                isUser: false
+              })),
+              ...(userLocation ? [{
+                id: 'user-location',
+                latitude: userLocation.lat,
+                longitude: userLocation.lng,
+                isUser: true
+              }] : [])
+            ].filter(marker => marker.latitude !== 0 && marker.longitude !== 0)}
           />
         </div>
       </div>

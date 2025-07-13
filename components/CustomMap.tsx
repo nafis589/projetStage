@@ -5,10 +5,11 @@ import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
 interface Marker {
-  id: number;
+  id: number | string; // Allow string for user marker ID
   latitude: number;
   longitude: number;
   isSelected?: boolean;
+  isUser?: boolean; // To identify the user's marker
 }
 
 interface CustomMapProps {
@@ -31,15 +32,15 @@ const CustomMap: React.FC<CustomMapProps> = ({
   const createdMarkers = useRef<maplibregl.Marker[]>([]);
   const [isClient, setIsClient] = useState(false);
 
-  // Ensure component only renders on client side (Next.js SSR compatibility)
+  // Ensure component only renders on client side
   useEffect(() => {
     setIsClient(true);
   }, []);
 
+  // Initialize map
   useEffect(() => {
     if (!isClient || !mapContainer.current || map.current) return;
 
-    // Initialize the map with OpenStreetMap style
     map.current = new maplibregl.Map({
       container: mapContainer.current,
       style: {
@@ -64,23 +65,33 @@ const CustomMap: React.FC<CustomMapProps> = ({
           }
         ]
       },
-      center: center as [number, number],
+      center: center as [number, number], // Use center directly
       zoom: zoom,
       attributionControl: false,
     });
 
-    // Add navigation controls
     map.current.addControl(new maplibregl.NavigationControl(), 'top-right');
 
-    // Cleanup function
     return () => {
       if (map.current) {
         map.current.remove();
         map.current = null;
       }
     };
-  }, [isClient, center, zoom]);
+  }, [isClient]); // Removed center and zoom from dependencies
 
+  // Update map center when prop changes
+  useEffect(() => {
+    if (map.current && center) {
+      map.current.flyTo({
+        center: center, // Use center directly
+        zoom: 14, // You might want to adjust the zoom level when flying to a new location
+        essential: true // This animation is considered essential with respect to prefers-reduced-motion
+      });
+    }
+  }, [center]); // This effect now specifically handles center changes
+
+  // Update markers
   useEffect(() => {
     if (!map.current || !isClient) return;
 
@@ -90,19 +101,29 @@ const CustomMap: React.FC<CustomMapProps> = ({
 
     // Add new markers
     markers.forEach(markerData => {
-      const { latitude, longitude, isSelected } = markerData;
+      const { latitude, longitude, isSelected, isUser } = markerData;
 
       // Custom marker element
       const el = document.createElement('div');
-      el.style.width = '20px';
-      el.style.height = '20px';
-      el.style.borderRadius = '50%';
-      el.style.border = '2px solid white';
-      el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
-      el.style.backgroundColor = isSelected ? '#3b82f6' : '#ef4444'; // blue-500 or red-500
       
-      if (isSelected) {
-        el.style.outline = '2px solid #3b82f6';
+      if (isUser) {
+        // Style for the user's location marker
+        el.style.width = '24px';
+        el.style.height = '24px';
+        el.style.backgroundImage = 'url(/user-location.svg)'; // An SVG for a pulsing dot
+        el.style.backgroundSize = 'contain';
+      } else {
+        // Style for professional markers
+        el.style.width = '20px';
+        el.style.height = '20px';
+        el.style.borderRadius = '50%';
+        el.style.border = '2px solid white';
+        el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+        el.style.backgroundColor = isSelected ? '#3b82f6' : '#ef4444'; // blue-500 or red-500
+        
+        if (isSelected) {
+          el.style.outline = '2px solid #3b82f6';
+        }
       }
 
       const marker = new maplibregl.Marker({ element: el })
