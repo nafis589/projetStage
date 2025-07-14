@@ -15,7 +15,7 @@ export async function PUT(request, { params }) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
-  if (!status || !['accepted', 'cancelled'].includes(status)) {
+  if (!status || !['accepted', 'cancelled', 'completed'].includes(status)) {
     return NextResponse.json({ error: "Statut invalide" }, { status: 400 });
   }
 

@@ -92,7 +92,7 @@ interface Booking {
   service: string;
   location: string;
   booking_time: string;
-  status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
+  status: 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'accepted';
   price: number;
   client_firstname: string;
   client_lastname: string;
@@ -1166,7 +1166,7 @@ const Bookings: React.FC = () => {
     fetchBookings();
   }, []);
 
-  const handleUpdateBookingStatus = async (bookingId: number, status: 'accepted' | 'cancelled') => {
+  const handleUpdateBookingStatus = async (bookingId: number, status: 'accepted' | 'cancelled' | 'completed') => {
     try {
       const response = await fetch(`/api/bookings/${bookingId}`, {
         method: 'PUT',
@@ -1210,6 +1210,8 @@ const Bookings: React.FC = () => {
         return "text-red-600 bg-red-50";
       case "confirmed":
         return "text-blue-600 bg-blue-50";
+      case "accepted":
+        return "text-blue-600 bg-blue-50";
       default:
         return "text-gray-600 bg-gray-50";
     }
@@ -1231,6 +1233,14 @@ const Bookings: React.FC = () => {
       className: "hover:bg-red-50 text-red-600",
     },
   ];
+
+  const completedAction: TableAction = {
+    icon: Check,
+    onClick: (row: Record<string, string | number>) => {
+      handleUpdateBookingStatus(row.id as number, 'completed');
+    },
+    className: "hover:bg-blue-50 text-blue-600",
+  };
 
   const bookingsData = bookings.map((booking) => ({
     id: booking.id,
@@ -1319,6 +1329,17 @@ const Bookings: React.FC = () => {
                             <action.icon size={16} />
                           </button>
                         ))}
+
+                        {(booking.status === "confirmed" || booking.status === "accepted") && (
+                        <button
+                          onClick={() => completedAction.onClick(booking)}
+                          className={`p-2 rounded-xl ${completedAction.className}`}
+                          title="Marquer comme terminé"
+                        >
+                          <completedAction.icon size={16} />
+                        </button>
+                      )}
+
                     </div>
                   </td>
                 </tr>
