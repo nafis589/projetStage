@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ChevronDown, User, Clock, Calendar, MapPin } from "lucide-react";
 import CustomMap from "../../../../components/CustomMap";
 import SearchResults from "../../../../app/components/SearchResults";
+import BookingHistory from "../../../../app/components/BookingHistory";
 
 interface Professional {
   id: number;
@@ -252,7 +253,7 @@ export default function ClientDashboard() {
   return (
     <div className="flex flex-col h-screen bg-gray-50">
       {/* Top Bar */}
-      <div className="bg-white shadow-sm border-b">
+      <div className="bg-white shadow-sm border-b border-gray-200">
         <div className="flex items-center justify-between px-6 py-4">
           {/* Logo */}
           <h1 className="text-2xl font-bold">Geservice</h1>
@@ -271,18 +272,16 @@ export default function ClientDashboard() {
               <span className="font-medium">Reservation</span>
             </button>
             <button
-              onClick={() => setActiveTab("courier")}
+              onClick={() => setActiveTab("history")}
               className={`flex items-center space-x-2 pb-2 border-b-2 transition-colors ${
-                activeTab === "courier"
+                activeTab === "history"
                   ? "border-black text-black"
                   : "border-transparent text-gray-500 hover:text-gray-700"
               }`}
             >
-              <div className="w-5 h-5 flex items-center justify-center">
-                <div className="w-3 h-3 border-2 border-gray-400 rounded-sm"></div>
-              </div>
-              <span className="font-medium">Courier</span>
+              <span className="font-medium">Historique</span>
             </button>
+            
           </div>
 
           {/* User Section */}
@@ -300,258 +299,261 @@ export default function ClientDashboard() {
       </div>
 
       {/* Main Content */}
-      <div className="flex flex-1">
-        {/* Form Sidebar */}
-        <div className="w-96 bg-white shadow-lg flex flex-col">
-          {/* Form Header */}
-          <div className="p-6">
-            <h2 className="text-xl font-semibold">
-              Rechercher un professionel
-            </h2>
-          </div>
+      {activeTab === 'course' && (
+        <div className="flex flex-1">
+          {/* Form Sidebar */}
+          <div className="w-96 bg-white shadow-lg flex flex-col">
+            {/* Form Header */}
+            <div className="p-6">
+              <h2 className="text-xl font-semibold">
+                Rechercher un professionel
+              </h2>
+            </div>
 
-          {/* Form Content */}
-          <div className="bg-white p-6 max-w-md">
-            {/* Location Inputs */}
-            <div className="space-y-4 mb-4">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Quel service rechercher vous?"
-                  value={pickupLocation}
-                  onChange={(e) => setPickupLocation(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-                />
+            {/* Form Content */}
+            <div className="bg-white p-6 max-w-md">
+              {/* Location Inputs */}
+              <div className="space-y-4 mb-4">
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Quel service rechercher vous?"
+                    value={pickupLocation}
+                    onChange={(e) => setPickupLocation(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                  />
+                </div>
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Entrez votre adresse"
+                    value={dropoffLocation}
+                    onChange={(e) => setDropoffLocation(e.target.value)}
+                    readOnly={!!userLocation}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                  />
+                  <button
+                    onClick={handleGetCurrentLocation}
+                    disabled={isLocating}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full hover:bg-gray-100 transition-colors"
+                    title="Utiliser ma position actuelle"
+                  >
+                    {isLocating ? (
+                      <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      <MapPin size={18} className="text-gray-600" />
+                    )}
+                  </button>
+                </div>
               </div>
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Entrez votre adresse"
-                  value={dropoffLocation}
-                  onChange={(e) => setDropoffLocation(e.target.value)}
-                  readOnly={!!userLocation}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-                />
-                <button
-                  onClick={handleGetCurrentLocation}
-                  disabled={isLocating}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full hover:bg-gray-100 transition-colors"
-                  title="Utiliser ma position actuelle"
-                >
-                  {isLocating ? (
-                    <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
-                  ) : (
-                    <MapPin size={18} className="text-gray-600" />
+
+              {/* Time Selection */}
+              <div className="flex gap-2 mb-6">
+                {/* Date Input */}
+                <div ref={dateRef} className="relative flex-1">
+                  <label className="text-xs text-gray-500 mb-1 block">Date</label>
+                  <button
+                    onClick={() => setShowDatePicker(!showDatePicker)}
+                    className="w-full flex items-center justify-between px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black bg-white hover:border-gray-400 transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Calendar size={16} className="text-gray-500" />
+                      <span className="text-gray-700">
+                        {selectedDate
+                          ? new Date(selectedDate).toLocaleDateString("fr-FR")
+                          : "Aujourd'hui"}
+                      </span>
+                    </div>
+                    <ChevronDown size={16} className="text-gray-500" />
+                  </button>
+
+                  {/* Date Popover avec Calendrier */}
+                  {showDatePicker && (
+                    <div className="absolute top-full left-0 mb-2 bg-white border border-gray-200 rounded-lg shadow-xl z-10 p-4 w-80">
+                      {/* En-tête du calendrier */}
+                      <div className="flex items-center justify-between mb-4">
+                        <button
+                          onClick={goToPreviousMonth}
+                          className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                        >
+                          <ChevronDown
+                            size={16}
+                            className="rotate-90 text-gray-600"
+                          />
+                        </button>
+                        <h3 className="font-semibold text-gray-800">
+                          {monthNames[currentMonth]} {currentYear}
+                        </h3>
+                        <button
+                          onClick={goToNextMonth}
+                          className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                        >
+                          <ChevronDown
+                            size={16}
+                            className="-rotate-90 text-gray-600"
+                          />
+                        </button>
+                      </div>
+
+                      {/* Jours de la semaine */}
+                      <div className="grid grid-cols-7 gap-1 mb-2">
+                        {dayNames.map((day) => (
+                          <div
+                            key={day}
+                            className="text-center text-xs font-medium text-gray-500 py-2"
+                          >
+                            {day}
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Grille du calendrier */}
+                      <div className="grid grid-cols-7 gap-1">
+                        {calendarDays.map((date, index) => (
+                          <button
+                            key={index}
+                            onClick={() => handleDateSelect(date)}
+                            disabled={!date || isPastDate(date)}
+                            className={`
+                              h-10 w-10 rounded-lg text-sm font-medium transition-all duration-200
+                              ${!date ? "invisible" : ""}
+                              ${
+                                isPastDate(date)
+                                  ? "text-gray-300 cursor-not-allowed"
+                                  : "hover:bg-gray-100 cursor-pointer"
+                              }
+                              ${
+                                isToday(date)
+                                  ? "bg-blue-100 text-blue-600 font-bold"
+                                  : "text-gray-700"
+                              }
+                              ${
+                                isSelected(date)
+                                  ? "bg-black text-white hover:bg-gray-800"
+                                  : ""
+                              }
+                            `}
+                          >
+                            {date?.getDate()}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Boutons rapides */}
+                      <div className="flex gap-2 mt-4 pt-3 border-t border-gray-100">
+                        <button
+                          onClick={() => handleDateSelect(new Date())}
+                          className="flex-1 px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+                        >
+                          Aujourd&apos;hui
+                        </button>
+                        <button
+                          onClick={() =>
+                            handleDateSelect(
+                              new Date(Date.now() + 24 * 60 * 60 * 1000)
+                            )
+                          }
+                          className="flex-1 px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+                        >
+                          Demain
+                        </button>
+                      </div>
+                    </div>
                   )}
-                </button>
-              </div>
-            </div>
+                </div>
 
-            {/* Time Selection */}
-            <div className="flex gap-2 mb-6">
-              {/* Date Input */}
-              <div ref={dateRef} className="relative flex-1">
-                <label className="text-xs text-gray-500 mb-1 block">Date</label>
-                <button
-                  onClick={() => setShowDatePicker(!showDatePicker)}
-                  className="w-full flex items-center justify-between px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black bg-white hover:border-gray-400 transition-colors"
-                >
-                  <div className="flex items-center gap-2">
-                    <Calendar size={16} className="text-gray-500" />
-                    <span className="text-gray-700">
-                      {selectedDate
-                        ? new Date(selectedDate).toLocaleDateString("fr-FR")
-                        : "Aujourd'hui"}
-                    </span>
-                  </div>
-                  <ChevronDown size={16} className="text-gray-500" />
-                </button>
-
-                {/* Date Popover avec Calendrier */}
-                {showDatePicker && (
-                  <div className="absolute top-full left-0 mb-2 bg-white border border-gray-200 rounded-lg shadow-xl z-10 p-4 w-80">
-                    {/* En-tête du calendrier */}
-                    <div className="flex items-center justify-between mb-4">
-                      <button
-                        onClick={goToPreviousMonth}
-                        className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                      >
-                        <ChevronDown
-                          size={16}
-                          className="rotate-90 text-gray-600"
-                        />
-                      </button>
-                      <h3 className="font-semibold text-gray-800">
-                        {monthNames[currentMonth]} {currentYear}
-                      </h3>
-                      <button
-                        onClick={goToNextMonth}
-                        className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                      >
-                        <ChevronDown
-                          size={16}
-                          className="-rotate-90 text-gray-600"
-                        />
-                      </button>
+                {/* Time Input */}
+                <div ref={timeRef} className="relative flex-1">
+                  <label className="text-xs text-gray-500 mb-1 block">
+                    Heure
+                  </label>
+                  <button
+                    onClick={() => setShowTimePicker(!showTimePicker)}
+                    className="w-full flex items-center justify-between px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black bg-white hover:border-gray-400 transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Clock size={16} className="text-gray-500" />
+                      <span className="text-gray-700">
+                        {selectedTime || "Maintenant"}
+                      </span>
                     </div>
+                    <ChevronDown size={16} className="text-gray-500" />
+                  </button>
 
-                    {/* Jours de la semaine */}
-                    <div className="grid grid-cols-7 gap-1 mb-2">
-                      {dayNames.map((day) => (
-                        <div
-                          key={day}
-                          className="text-center text-xs font-medium text-gray-500 py-2"
-                        >
-                          {day}
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Grille du calendrier */}
-                    <div className="grid grid-cols-7 gap-1">
-                      {calendarDays.map((date, index) => (
+                  {/* Time Popover */}
+                  {showTimePicker && (
+                    <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-10 max-h-64 overflow-y-auto">
+                      <div className="p-2">
                         <button
-                          key={index}
-                          onClick={() => handleDateSelect(date)}
-                          disabled={!date || isPastDate(date)}
-                          className={`
-                            h-10 w-10 rounded-lg text-sm font-medium transition-all duration-200
-                            ${!date ? "invisible" : ""}
-                            ${
-                              isPastDate(date)
-                                ? "text-gray-300 cursor-not-allowed"
-                                : "hover:bg-gray-100 cursor-pointer"
-                            }
-                            ${
-                              isToday(date)
-                                ? "bg-blue-100 text-blue-600 font-bold"
-                                : "text-gray-700"
-                            }
-                            ${
-                              isSelected(date)
-                                ? "bg-black text-white hover:bg-gray-800"
-                                : ""
-                            }
-                          `}
+                          onClick={() => handleTimeSelect("")}
+                          className="w-full text-left px-3 py-2 rounded-md hover:bg-gray-100 transition-colors font-medium"
                         >
-                          {date?.getDate()}
+                          Maintenant
                         </button>
-                      ))}
+                        {timeOptions.map((time, index) => (
+                          <button
+                            key={index}
+                            onClick={() => handleTimeSelect(time)}
+                            className="w-full text-left px-3 py-2 rounded-md hover:bg-gray-100 transition-colors"
+                          >
+                            {time}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-
-                    {/* Boutons rapides */}
-                    <div className="flex gap-2 mt-4 pt-3 border-t border-gray-100">
-                      <button
-                        onClick={() => handleDateSelect(new Date())}
-                        className="flex-1 px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
-                      >
-                        Aujourd&apos;hui
-                      </button>
-                      <button
-                        onClick={() =>
-                          handleDateSelect(
-                            new Date(Date.now() + 24 * 60 * 60 * 1000)
-                          )
-                        }
-                        className="flex-1 px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
-                      >
-                        Demain
-                      </button>
-                    </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
 
-              {/* Time Input */}
-              <div ref={timeRef} className="relative flex-1">
-                <label className="text-xs text-gray-500 mb-1 block">
-                  Heure
-                </label>
+              {/* Search Button */}
+              <div className="mt-6">
                 <button
-                  onClick={() => setShowTimePicker(!showTimePicker)}
-                  className="w-full flex items-center justify-between px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black bg-white hover:border-gray-400 transition-colors"
+                  className="w-full bg-black text-white py-3 px-4 rounded-lg hover:bg-gray-800 transition-colors font-medium"
+                  onClick={handleSearch}
                 >
-                  <div className="flex items-center gap-2">
-                    <Clock size={16} className="text-gray-500" />
-                    <span className="text-gray-700">
-                      {selectedTime || "Maintenant"}
-                    </span>
-                  </div>
-                  <ChevronDown size={16} className="text-gray-500" />
+                  Rechercher
                 </button>
-
-                {/* Time Popover */}
-                {showTimePicker && (
-                  <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-10 max-h-64 overflow-y-auto">
-                    <div className="p-2">
-                      <button
-                        onClick={() => handleTimeSelect("")}
-                        className="w-full text-left px-3 py-2 rounded-md hover:bg-gray-100 transition-colors font-medium"
-                      >
-                        Maintenant
-                      </button>
-                      {timeOptions.map((time, index) => (
-                        <button
-                          key={index}
-                          onClick={() => handleTimeSelect(time)}
-                          className="w-full text-left px-3 py-2 rounded-md hover:bg-gray-100 transition-colors"
-                        >
-                          {time}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
-            </div>
-
-            {/* Search Button */}
-            <div className="mt-6">
-              <button
-                className="w-full bg-black text-white py-3 px-4 rounded-lg hover:bg-gray-800 transition-colors font-medium"
-                onClick={handleSearch}
-              >
-                Rechercher
-              </button>
             </div>
           </div>
-        </div>
 
-        {/* Search Results */}
-        {showResults && (
-          <SearchResults
-            professionals={professionals}
-            selectedProfessional={selectedProfessional}
-            onProfessionalSelect={setSelectedProfessional}
-            userLocation={userLocation}
-          />
-        )}
+          {/* Search Results */}
+          {showResults && (
+            <SearchResults
+              professionals={professionals}
+              selectedProfessional={selectedProfessional}
+              onProfessionalSelect={setSelectedProfessional}
+              userLocation={userLocation}
+            />
+          )}
 
-        {/* Map Container */}
-        <div className={`relative transition-all duration-300 ${showResults ? 'flex-1' : 'flex-[2]'}`}>
-          <CustomMap
-            id="client-dashboard-map"
-            center={userLocation ? [userLocation.lng, userLocation.lat] : [1.2228, 6.1319]} // Corrected to [lng, lat]
-            zoom={13}
-            className="w-full h-full"
-            markers={[
-              ...professionals.map(p => ({
-                id: p.id,
-                latitude: p.latitude || 0,
-                longitude: p.longitude || 0,
-                isSelected: selectedProfessional?.id === p.id,
-                isUser: false
-              })),
-              ...(userLocation ? [{
-                id: 'user-location',
-                latitude: userLocation.lat,
-                longitude: userLocation.lng,
-                isUser: true
-              }] : [])
-            ].filter(marker => marker.latitude !== 0 && marker.longitude !== 0)}
-          />
+          {/* Map Container */}
+          <div className={`relative transition-all duration-300 ${showResults ? 'flex-1' : 'flex-[2]'}`}>
+            <CustomMap
+              id="client-dashboard-map"
+              center={userLocation ? [userLocation.lng, userLocation.lat] : [1.2228, 6.1319]} // Corrected to [lng, lat]
+              zoom={13}
+              className="w-full h-full"
+              markers={[
+                ...professionals.map(p => ({
+                  id: p.id,
+                  latitude: p.latitude || 0,
+                  longitude: p.longitude || 0,
+                  isSelected: selectedProfessional?.id === p.id,
+                  isUser: false
+                })),
+                ...(userLocation ? [{
+                  id: 'user-location',
+                  latitude: userLocation.lat,
+                  longitude: userLocation.lng,
+                  isUser: true
+                }] : [])
+              ].filter(marker => marker.latitude !== 0 && marker.longitude !== 0)}
+            />
+          </div>
         </div>
-      </div>
+      )}
+      {activeTab === 'history' && <BookingHistory />}
     </div>
   );
 }
