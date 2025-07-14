@@ -1134,26 +1134,70 @@ const Availability = ({ professionalId }: AvailabilityProps) => {
 const Bookings: React.FC = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  const fetchBookings = async () => {
+    try {
+      const response = await fetch('/api/bookings?view=professional');
+      if (response.ok) {
+        const data = await response.json();
+        setBookings(data);
+      } else {
+        console.error('Failed to fetch bookings');
+        toast({
+          variant: "destructive",
+          title: "Erreur",
+          description: "Impossible de charger les réservations.",
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching bookings:', error);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Une erreur est survenue lors du chargement des réservations.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchBookings = async () => {
-      try {
-        const response = await fetch('/api/bookings?view=professional');
-        if (response.ok) {
-          const data = await response.json();
-          setBookings(data);
-        } else {
-          console.error('Failed to fetch bookings');
-        }
-      } catch (error) {
-        console.error('Error fetching bookings:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchBookings();
   }, []);
+
+  const handleUpdateBookingStatus = async (bookingId: number, status: 'accepted' | 'cancelled') => {
+    try {
+      const response = await fetch(`/api/bookings/${bookingId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status }),
+      });
+
+      if (response.ok) {
+        const updatedBooking = await response.json();
+        setBookings(prevBookings =>
+          prevBookings.map(b => (b.id === bookingId ? { ...b, status: updatedBooking.status } : b))
+        );
+        toast({
+          variant: "success",
+          title: "Statut mis à jour !",
+          description: `La réservation a été ${status === 'accepted' ? 'confirmée' : 'annulée'}.`,
+        });
+      } else {
+        throw new Error('Failed to update booking status');
+      }
+    } catch (error) {
+      console.error('Error updating booking status:', error);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible de mettre à jour le statut de la réservation.",
+      });
+    }
+  };
 
 
   const getStatusColor = (status: Booking["status"]) => {
@@ -1175,14 +1219,14 @@ const Bookings: React.FC = () => {
     {
       icon: Check,
       onClick: (row: Record<string, string | number>) => {
-        console.log("Accept", row);
+        handleUpdateBookingStatus(row.id as number, 'accepted');
       },
       className: "hover:bg-green-50 text-green-600",
     },
     {
       icon: X,
       onClick: (row: Record<string, string | number>) => {
-        console.log("Reject", row);
+        handleUpdateBookingStatus(row.id as number, 'cancelled');
       },
       className: "hover:bg-red-50 text-red-600",
     },
@@ -1216,7 +1260,7 @@ const Bookings: React.FC = () => {
   return (
     <div className="space-y-6">
       <h3 className="text-xl font-bold text-black">Réservations</h3>
-
+      <Toaster />
       <Card>
         <div className="overflow-x-auto">
           <table className="w-full">
