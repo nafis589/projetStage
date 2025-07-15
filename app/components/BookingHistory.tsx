@@ -54,16 +54,16 @@ const BookingHistorySkeleton = () => (
     <div className="h-8 w-48 bg-gray-200 rounded mb-6"></div>
     <div className="border border-gray-200 rounded-lg overflow-hidden">
       <div className="bg-gray-50 px-6 py-4">
-        <div className="grid grid-cols-6 gap-4">
-          {[...Array(6)].map((_, i) => (
+        <div className="grid grid-cols-7 gap-4">
+          {[...Array(7)].map((_, i) => (
             <div key={i} className="h-4 bg-gray-200 rounded"></div>
           ))}
         </div>
       </div>
       {[...Array(3)].map((_, i) => (
         <div key={i} className="border-t border-gray-200 px-6 py-4">
-          <div className="grid grid-cols-6 gap-4">
-            {[...Array(6)].map((_, j) => (
+          <div className="grid grid-cols-7 gap-4">
+            {[...Array(7)].map((_, j) => (
               <div key={j} className="h-4 bg-gray-200 rounded"></div>
             ))}
           </div>
@@ -77,31 +77,60 @@ export default function BookingHistory() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [cancellingId, setCancellingId] = useState<number | null>(null);
+
+  const fetchBookings = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await fetch('/api/bookings');
+      if (!response.ok) {
+        throw new Error('Failed to fetch bookings');
+      }
+      const data: ApiBooking[] = await response.json();
+      const bookingsWithNumericPrice: Booking[] = data.map((booking) => ({
+        ...booking,
+        price: Number(booking.price),
+      }));
+      setBookings(bookingsWithNumericPrice);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Une erreur inconnue s&apos;est produite");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchBookings = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const response = await fetch('/api/bookings');
-        if (!response.ok) {
-          throw new Error('Failed to fetch bookings');
-        }
-        const data: ApiBooking[] = await response.json();
-        const bookingsWithNumericPrice: Booking[] = data.map((booking) => ({
-          ...booking,
-          price: Number(booking.price),
-        }));
-        setBookings(bookingsWithNumericPrice);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Une erreur inconnue s&apos;est produite");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchBookings();
   }, []);
+
+  const handleCancelBooking = async (bookingId: number) => {
+    setCancellingId(bookingId);
+
+    const originalBookings = [...bookings];
+    
+    const updatedBookings = bookings.map(b => 
+        b.id === bookingId ? { ...b, status: 'cancelled' as const } : b
+    );
+    setBookings(updatedBookings);
+
+    try {
+        const response = await fetch(`/api/bookings/${bookingId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: 'cancelled' }),
+        });
+
+        if (!response.ok) {
+            throw new Error("Échec de l'annulation de la réservation");
+        }
+    } catch (err) {
+        setBookings(originalBookings);
+        setError(err instanceof Error ? err.message : "Une erreur est survenue lors de l'annulation.");
+    } finally {
+        setCancellingId(null);
+    }
+  };
 
   return (
     <div className="flex-1 bg-gray-50 p-6 sm:p-8 md:p-10">
@@ -117,7 +146,7 @@ export default function BookingHistory() {
              <p className="mt-1 text-sm text-gray-500">{error}</p>
              <div className="mt-6">
                  <button 
-                    onClick={() => window.location.reload()}
+                    onClick={fetchBookings}
                     className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-500 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                  >
                      <RefreshCw className="-ml-1 mr-2 h-5 w-5" />
@@ -159,6 +188,9 @@ export default function BookingHistory() {
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Statut
                     </th>
+                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Action
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -199,6 +231,22 @@ export default function BookingHistory() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <BookingStatusBadge status={booking.status} />
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          {(booking.status !== 'completed' && booking.status !== 'cancelled') && (
+                            <button
+                              onClick={() => handleCancelBooking(booking.id)}
+                              disabled={!!cancellingId}
+                              className="text-red-500 hover:text-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                              title="Annuler la réservation"
+                            >
+                              {cancellingId === booking.id ? (
+                                <RefreshCw className="animate-spin" size={20} />
+                              ) : (
+                                <XCircle size={20} />
+                              )}
+                            </button>
+                          )}
                         </td>
                       </tr>
                     );

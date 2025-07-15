@@ -34,4 +34,37 @@ export async function PUT(request, { params }) {
     console.error("Erreur lors de la mise à jour de la réservation:", error);
     return NextResponse.json({ error: "Erreur interne du serveur" }, { status: 500 });
   }
+}
+
+export async function PATCH(request, { params }) {
+  const session = await getServerSession(authOptions);
+  const { id } = params;
+  const { status } = await request.json();
+
+  if (!session || !session.user) {
+    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+  }
+
+  if (status !== 'cancelled') {
+    return NextResponse.json({ error: "Action non autorisée. Seule l'annulation est permise." }, { status: 400 });
+  }
+
+  try {
+    const [booking] = await query("SELECT client_id FROM bookings WHERE id = ?", [id]);
+
+    if (!booking) {
+      return NextResponse.json({ error: "Réservation non trouvée." }, { status: 404 });
+    }
+
+    if (booking.client_id !== session.user.id) {
+      return NextResponse.json({ error: "Vous n'êtes pas autorisé à modifier cette réservation." }, { status: 403 });
+    }
+
+    await query("UPDATE bookings SET status = ? WHERE id = ?", [status, id]);
+
+    return NextResponse.json({ message: "Réservation annulée avec succès." }, { status: 200 });
+  } catch (error) {
+    console.error("Erreur lors de l'annulation de la réservation:", error);
+    return NextResponse.json({ error: "Erreur interne du serveur" }, { status: 500 });
+  }
 } 
