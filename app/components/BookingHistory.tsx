@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Briefcase, MapPin, DollarSign, CheckCircle, Clock, AlertCircle, XCircle, RefreshCw } from 'lucide-react';
+import AddressFromCoordinates from './AddressFromCoordinates';
 
 interface Booking {
   id: number;
@@ -196,6 +197,18 @@ export default function BookingHistory() {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {bookings.map((booking) => {
                     const bookingDate = new Date(booking.booking_time);
+                    let locationDisplay;
+                    try {
+                      const coords = JSON.parse(booking.location);
+                      if (coords && typeof coords.lat === 'number' && typeof coords.lng === 'number') {
+                        locationDisplay = <AddressFromCoordinates lat={coords.lat} lng={coords.lng} />;
+                      } else {
+                        locationDisplay = <span>{booking.location}</span>;
+                      }
+                    } catch {
+                      locationDisplay = <span>{booking.location}</span>;
+                    }
+
                     return (
                       <tr key={booking.id} className="hover:bg-gray-50 transition-colors duration-200">
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -217,10 +230,12 @@ export default function BookingHistory() {
                             </span>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-4 text-sm text-gray-500 max-w-xs">
                           <div className="flex items-center gap-1">
-                            <MapPin size={14} className="text-gray-400" />
-                            <span>{booking.location}</span>
+                            <MapPin size={14} className="text-gray-400 flex-shrink-0" />
+                            <div className="truncate">
+                              {locationDisplay}
+                            </div>
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">

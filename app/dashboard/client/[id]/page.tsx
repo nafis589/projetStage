@@ -115,6 +115,38 @@ export default function ClientDashboard() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    const fetchLocation = async () => {
+      if (selectedProfessional) {
+        // Find the professional in the list to check if we already have the location
+        const professionalInList = professionals.find(p => p.id === selectedProfessional.id);
+
+        // If we don't have lat/lng, fetch it.
+        if (professionalInList && (professionalInList.latitude === null || professionalInList.longitude === null || professionalInList.latitude === undefined || professionalInList.longitude === undefined)) {
+          try {
+            const response = await fetch(`/api/location?userId=${selectedProfessional.id}`);
+            if (response.ok) {
+              const locationData = await response.json();
+              if (locationData) {
+                setProfessionals(prev => 
+                  prev.map(p => 
+                    p.id === selectedProfessional.id 
+                      ? { ...p, latitude: locationData.latitude, longitude: locationData.longitude } 
+                      : p
+                  )
+                );
+              }
+            }
+          } catch (error) {
+            console.error("Failed to fetch professional location:", error);
+          }
+        }
+      }
+    };
+
+    fetchLocation();
+  }, [selectedProfessional, professionals]);
+
   const handleDateSelect = (date: Date | null) => {
     if (date) {
       const todayStart = new Date();
