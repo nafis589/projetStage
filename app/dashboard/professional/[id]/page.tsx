@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import ServicePopover from "@/components/ui/ServicePopover";
+import AddressFromCoordinates from "@/app/components/AddressFromCoordinates";
 import {
   Home,
   User,
@@ -132,16 +133,16 @@ interface ButtonProps {
   disabled?: boolean;
 }
 
-interface TableAction {
+interface TableAction<T> {
   icon: React.ComponentType<{ size: number }>;
-  onClick: (row: Record<string, string | number>) => void;
+  onClick: (row: T) => void;
   className?: string;
 }
 
-interface TableProps {
+interface TableProps<T> {
   headers: string[];
-  data: Record<string, string | number>[];
-  actions?: TableAction[];
+  data: T[];
+  actions?: TableAction<T>[];
 }
 
 interface SidebarProps {
@@ -221,7 +222,11 @@ export const Button: React.FC<ButtonProps> = ({
   );
 };
 
-const Table: React.FC<TableProps> = ({ headers, data, actions }) => (
+const Table = <T extends Record<string, unknown>>({
+  headers,
+  data,
+  actions,
+}: TableProps<T>) => (
   <div className="overflow-x-auto">
     <table className="w-full">
       <thead>
@@ -667,7 +672,7 @@ const Services: React.FC<{ professionalId: string }> = ({ professionalId }) => {
     setPopoverState({ isOpen: false, mode: "add" });
   };
 
-  const actions: TableAction[] = [
+  const actions: TableAction<Record<string, string | number>>[] = [
     {
       icon: Edit3,
       onClick: (serviceData: Record<string, string | number>) => {
@@ -1217,39 +1222,30 @@ const Bookings: React.FC = () => {
     }
   };
 
-  const actions: TableAction[] = [
+  const actions: TableAction<Booking>[] = [
     {
       icon: Check,
-      onClick: (row: Record<string, string | number>) => {
-        handleUpdateBookingStatus(row.id as number, 'accepted');
+      onClick: (booking: Booking) => {
+        handleUpdateBookingStatus(booking.id, 'accepted');
       },
       className: "hover:bg-green-50 text-green-600",
     },
     {
       icon: X,
-      onClick: (row: Record<string, string | number>) => {
-        handleUpdateBookingStatus(row.id as number, 'cancelled');
+      onClick: (booking: Booking) => {
+        handleUpdateBookingStatus(booking.id, 'cancelled');
       },
       className: "hover:bg-red-50 text-red-600",
     },
   ];
 
-  const completedAction: TableAction = {
+  const completedAction: TableAction<Booking> = {
     icon: Check,
-    onClick: (row: Record<string, string | number>) => {
-      handleUpdateBookingStatus(row.id as number, 'completed');
+    onClick: (booking: Booking) => {
+      handleUpdateBookingStatus(booking.id, 'completed');
     },
     className: "hover:bg-blue-50 text-blue-600",
   };
-
-  const bookingsData = bookings.map((booking) => ({
-    id: booking.id,
-    client: `${booking.client_firstname} ${booking.client_lastname}`,
-    service: booking.service,
-    date: new Date(booking.booking_time).toLocaleDateString('fr-FR'),
-    amount: `${booking.price}€`,
-    status: booking.status,
-  }));
 
   if (loading) {
     return (
@@ -1286,6 +1282,9 @@ const Bookings: React.FC = () => {
                   Date
                 </th>
                 <th className="text-left py-3 px-4 font-medium text-gray-700">
+                  Localisation
+                </th>
+                <th className="text-left py-3 px-4 font-medium text-gray-700">
                   Montant
                 </th>
                 <th className="text-left py-3 px-4 font-medium text-gray-700">
@@ -1297,21 +1296,42 @@ const Bookings: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {bookingsData.map((booking, index) => (
+              {bookings.map((booking) => {
+                let locationDisplay;
+                try {
+                  const coords = JSON.parse(booking.location);
+                  if (coords && typeof coords.lat === 'number' && typeof coords.lng === 'number') {
+                    locationDisplay = <AddressFromCoordinates lat={coords.lat} lng={coords.lng} />;
+                  } else {
+                    locationDisplay = <span>{booking.location}</span>;
+                  }
+                } catch {
+                  locationDisplay = <span>{booking.location}</span>;
+                }
+                
+                return (
                 <tr
-                  key={index}
+                  key={booking.id}
                   className="border-b border-gray-50 hover:bg-gray-50"
                 >
-                  <td className="py-3 px-4 text-gray-600">{booking.client}</td>
+                  <td className="py-3 px-4 text-gray-600">{`${booking.client_firstname} ${booking.client_lastname}`}</td>
                   <td className="py-3 px-4 text-gray-600">{booking.service}</td>
-                  <td className="py-3 px-4 text-gray-600">{booking.date}</td>
+                  <td className="py-3 px-4 text-gray-600">{new Date(booking.booking_time).toLocaleDateString('fr-FR')}</td>
+                  <td className="py-3 px-4 text-sm text-gray-500 max-w-xs">
+                    <div className="flex items-center gap-1">
+                      <MapPin size={14} className="text-gray-400 flex-shrink-0" />
+                      <div className="truncate">
+                        {locationDisplay}
+                      </div>
+                    </div>
+                  </td>
                   <td className="py-3 px-4 text-gray-600 font-medium">
-                    {booking.amount}
+                    {`${booking.price}€`}
                   </td>
                   <td className="py-3 px-4">
                     <span
                       className={`px-3 py-1 rounded-2xl text-sm font-medium ${getStatusColor(
-                        booking.status as Booking['status']
+                        booking.status
                       )}`}
                     >
                       {booking.status}
@@ -1343,7 +1363,8 @@ const Bookings: React.FC = () => {
                     </div>
                   </td>
                 </tr>
-              ))}
+                )
+              })}
             </tbody>
           </table>
         </div>
