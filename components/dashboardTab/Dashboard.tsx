@@ -329,22 +329,22 @@ const Dashboard: React.FC = () => {
             <QuickAction 
               title="Gérer Disponibilités"
               icon={Calendar}
-              color="bg-gradient-to-r from-blue-500 to-blue-600"
+              color="bg-gray-400"
             />
             <QuickAction 
               title="Modifier Profil"
               icon={Settings}
-              color="bg-gradient-to-r from-purple-500 to-purple-600"
+              color="bg-gray-400"
             />
             <QuickAction 
               title="Gérer Localisation"
               icon={MapPin}
-              color="bg-gradient-to-r from-green-500 to-green-600"
+              color="bg-gray-400"
             />
             <QuickAction 
               title="Services Offerts"
               icon={Briefcase}
-              color="bg-gradient-to-r from-amber-500 to-amber-600"
+              color="bg-gray-400"
             />
           </div>
 
