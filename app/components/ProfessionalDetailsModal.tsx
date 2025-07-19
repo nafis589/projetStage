@@ -1,7 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { X, Star, MapPin, Clock, User } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface Professional {
   id: number;
@@ -22,12 +23,69 @@ interface Professional {
 interface ProfessionalDetailsModalProps {
   professional: Professional;
   onClose: () => void;
+  userLocation: { lat: number; lng: number } | null;
+  onBookingSuccess?: () => void;
 }
 
 const ProfessionalDetailsModal: React.FC<ProfessionalDetailsModalProps> = ({
   professional,
   onClose,
+  userLocation,
+  onBookingSuccess,
 }) => {
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
+
+  const handleBooking = async () => {
+    if (!userLocation) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible de déterminer votre position pour la réservation.",
+      });
+      return;
+    }
+    setLoading(true);
+    try {
+      const response = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          professional_id: professional.id,
+          service: professional.profession,
+          price: professional.min_price,
+          location: JSON.stringify(userLocation),
+        }),
+      });
+      if (response.ok) {
+        toast({
+          variant: "success",
+          title: "Succès !",
+          description: "Réservation effectuée avec succès !",
+        });
+        onBookingSuccess?.();
+        onClose();
+      } else {
+        const errorData = await response.json();
+        toast({
+          variant: "destructive",
+          title: "Erreur",
+          description: `Erreur lors de la réservation: ${errorData.error}`,
+        });
+      }
+    } catch {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la réservation.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div
@@ -144,16 +202,13 @@ const ProfessionalDetailsModal: React.FC<ProfessionalDetailsModalProps> = ({
               onClick={onClose}
               className="flex-1 px-4 py-2 text-sm border border-gray-300 rounded-lg font-medium hover:bg-gray-50 transition-colors"
             >
-              Remove
+              Fermer
             </button>
             <button
-              onClick={() => {
-                // Handle booking logic
-                onClose();
-              }}
-              className="flex-1 px-4 py-2 text-sm bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition-colors"
+              onClick={handleBooking}
+              className="w-full px-3 py-1.5 text-sm font-medium text-white bg-black rounded-lg hover:bg-gray-800 transition-colors"
             >
-              Réserver
+              {loading ? "Réservation..." : "Réserver"}
             </button>
           </div>
         </div>

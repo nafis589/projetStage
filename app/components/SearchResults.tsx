@@ -36,6 +36,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
 }) => {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedProfessionalForModal, setSelectedProfessionalForModal] = useState<Professional | null>(null);
+  const [bookingLoadingId, setBookingLoadingId] = useState<number | null>(null);
   const { toast } = useToast();
 
   const handleViewDetails = (professional: Professional) => {
@@ -117,9 +118,14 @@ const SearchResults: React.FC<SearchResultsProps> = ({
                     onClick={async (e) => {
                       e.stopPropagation();
                       if (!userLocation) {
-                        alert("Impossible de déterminer votre position pour la réservation.");
+                        toast({
+                          variant: "destructive",
+                          title: "Erreur",
+                          description: "Impossible de déterminer votre position pour la réservation.",
+                        });
                         return;
                       }
+                      setBookingLoadingId(professional.id);
                       try {
                         const response = await fetch('/api/bookings', {
                           method: 'POST',
@@ -137,24 +143,30 @@ const SearchResults: React.FC<SearchResultsProps> = ({
                           toast({
                             variant: "success",
                             title: "Succès !",
-                            description: "Reservations éffectué avec succès!.",
+                            description: "Réservation effectuée avec succès!.",
                           });
                         } else {
                           const errorData = await response.json();
                           toast({
                             variant: "destructive",
                             title: "Erreur",
-                            description: `Erreur lors de la réservation ${errorData.error}`,
+                            description: `Erreur lors de la réservation: ${errorData.error}`,
                           });
                         }
-                      } catch (error) {
-                        console.error('Error during booking:', error);
-                        alert('Une erreur est survenue lors de la réservation.');
+                      } catch {
+                        toast({
+                          variant: "destructive",
+                          title: "Erreur",
+                          description: "Une erreur est survenue lors de la réservation.",
+                        });
+                      } finally {
+                        setBookingLoadingId(null);
                       }
                     }}
-                    className="w-full px-3 py-1.5 text-sm font-medium text-white bg-black rounded-lg hover:bg-gray-800 transition-colors"
+                    disabled={bookingLoadingId === professional.id}
+                    className={`w-full px-3 py-1.5 text-sm font-medium text-white bg-black rounded-lg hover:bg-gray-800 transition-colors ${bookingLoadingId === professional.id ? 'opacity-60 cursor-not-allowed' : ''}`}
                   >
-                    Réserver
+                    {bookingLoadingId === professional.id ? "Réservation..." : "Réserver"}
                   </button>
                 </div>
               </div>
@@ -167,6 +179,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
         <ProfessionalDetailsModal
           professional={selectedProfessionalForModal}
           onClose={() => setShowDetailsModal(false)}
+          userLocation={userLocation}
         />
       )}
     </div>
