@@ -6,13 +6,13 @@ import {
   Euro, 
   CheckCircle, 
   AlertCircle,
-  Bell,
   Settings,
   MapPin,
   Briefcase,
   Eye,
   ChevronRight,
-  Zap
+  Zap,
+  User
 } from 'lucide-react';
 import {AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { LucideIcon } from "lucide-react";
@@ -38,7 +38,7 @@ interface Booking {
   date: string;
   status: 'confirmed' | 'pending';
   price: string;
-  avatar: string;
+  avatar: React.ReactNode;
 }
 
 const Dashboard: React.FC = () => {
@@ -68,10 +68,10 @@ const Dashboard: React.FC = () => {
   ];
 
   const recentBookings: Booking[] = [
-    { id: 1, client: 'Marie Dubois', service: 'Ménage Premium', date: '2025-07-20', status: 'confirmed', price: '€85', avatar: '👩‍💼' },
-    { id: 2, client: 'Pierre Martin', service: 'Jardinage Complet', date: '2025-07-21', status: 'pending', price: '€120', avatar: '👨‍🌾' },
-    { id: 3, client: 'Sophie Bernard', service: 'Nettoyage Vitres', date: '2025-07-22', status: 'confirmed', price: '€65', avatar: '👩‍🔧' },
-    { id: 4, client: 'Lucas Petit', service: 'Bricolage', date: '2025-07-23', status: 'pending', price: '€95', avatar: '👨‍🔧' }
+    { id: 1, client: 'Marie Dubois', service: 'Ménage Premium', date: '2025-07-20', status: 'confirmed', price: '€85', avatar: <User size={30} /> },
+    { id: 2, client: 'Pierre Martin', service: 'Jardinage Complet', date: '2025-07-21', status: 'pending', price: '€120', avatar: <User size={30} /> },
+    { id: 3, client: 'Sophie Bernard', service: 'Nettoyage Vitres', date: '2025-07-22', status: 'confirmed', price: '€65', avatar: <User size={30} /> },
+    { id: 4, client: 'Lucas Petit', service: 'Bricolage', date: '2025-07-23', status: 'pending', price: '€95', avatar: <User size={30} /> }
   ];
 
   const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, trend, color, delay = 0 }) => (
@@ -129,17 +129,7 @@ const Dashboard: React.FC = () => {
             <p className="text-gray-600 mt-2">Gérez votre activité en temps réel</p>
           </div>
           
-          {/* Notifications animées */}
-          <div className="flex items-center space-x-4">
-            <div className="relative">
-              <div className="absolute -top-2 -right-2 w-5 h-5 bg-gradient-to-r from-red-500 to-pink-500 rounded-full flex items-center justify-center">
-                <span className="text-xs text-white font-bold">3</span>
-              </div>
-              <div className="p-3 rounded-xl bg-white/70 backdrop-blur-xl border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer">
-                <Bell size={20} className="text-gray-700" />
-              </div>
-            </div>
-          </div>
+          
         </div>
       </div>
 
@@ -305,7 +295,7 @@ const Dashboard: React.FC = () => {
                 style={{ animationDelay: `${800 + index * 100}ms` }}
               >
                 <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-xl">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br bg-white/40 flex items-center justify-center text-xl">
                     {booking.avatar}
                   </div>
                   <div>
