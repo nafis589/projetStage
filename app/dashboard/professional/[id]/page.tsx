@@ -32,6 +32,7 @@ import type { Map, Marker, MapMouseEvent } from "maplibre-gl";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import Dashboard from "@/components/dashboardTab/Dashboard";
 
 // Types
 
@@ -391,76 +392,7 @@ const Topbar: React.FC<TopbarProps> = ({ username, onMenuClick }) => (
 );
 
 // Section Components
-const Dashboard: React.FC = () => (
-  <div className="space-y-6">
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      <Card>
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-gray-500 text-sm">Services actifs</p>
-            <p className="text-3xl font-bold text-black">12</p>
-          </div>
-          <Briefcase className="text-gray-400" size={32} />
-        </div>
-      </Card>
-      <Card>
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-gray-500 text-sm">Réservations</p>
-            <p className="text-3xl font-bold text-black">28</p>
-          </div>
-          <BookOpen className="text-gray-400" size={32} />
-        </div>
-      </Card>
-      <Card>
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-gray-500 text-sm">Revenus ce mois</p>
-            <p className="text-3xl font-bold text-black">€2,450</p>
-          </div>
-        </div>
-      </Card>
-      <Card>
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-gray-500 text-sm">Note moyenne</p>
-            <p className="text-3xl font-bold text-black">4.8</p>
-          </div>
-          <User className="text-gray-400" size={32} />
-        </div>
-      </Card>
-    </div>
-
-    <Card>
-      <h3 className="text-xl font-bold text-black mb-4">
-        Réservations récentes
-      </h3>
-      <Table
-        headers={["Client", "Service", "Date", "Statut"]}
-        data={[
-          {
-            client: "Marie Dubois",
-            service: "Ménage",
-            date: "15 Jan 2025",
-            statut: "Confirmée",
-          },
-          {
-            client: "Pierre Martin",
-            service: "Jardinage",
-            date: "16 Jan 2025",
-            statut: "En attente",
-          },
-          {
-            client: "Sophie Bernard",
-            service: "Ménage",
-            date: "17 Jan 2025",
-            statut: "Confirmée",
-          },
-        ]}
-      />
-    </Card>
-  </div>
-);
+<Dashboard />
 
 const profileSchema = z.object({
   firstname: z.string().min(2, "Le prénom est trop court"),
