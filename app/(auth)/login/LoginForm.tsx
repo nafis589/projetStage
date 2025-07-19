@@ -2,40 +2,43 @@
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import React, { useState } from "react";
+import React from "react";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import useLoading from "@/hooks/useLoading";
 import { LogIn } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+
+const formSchema = z.object({
+  email: z.string().email({ message: "Veuillez saisir une adresse e-mail valide." }),
+  password: z.string().min(1, { message: "Le mot de passe ne peut pas être vide." }),
+});
+
+type FormData = z.infer<typeof formSchema>;
+
 
 const LoginForm = () => {
   const router = useRouter();
   const { toast } = useToast();
   const { setLoading } = useLoading();
-  const [user, setUser] = useState({
-    email: "",
-    password: "",
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormData>({
+    resolver: zodResolver(formSchema),
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setUser((prevUser) => ({
-      ...prevUser,
-      [name]: value,
-    }));
-  };
-
-  const handleSubmit = async (
-    e: React.FormEvent<HTMLFormElement>
-  ): Promise<void> => {
-    e.preventDefault();
+  const onSubmit = async (data: FormData) => {
     setLoading(true);
     try {
       const result = await signIn("credentials", {
-        email: user.email,
-        password: user.password,
+        email: data.email,
+        password: data.password,
         redirect: false,
       });
 
@@ -89,7 +92,7 @@ const LoginForm = () => {
       </header>
       <section className="flex min-h-screen bg-zinc-50 px-4 py-16 md:py-32 dark:bg-transparent">
         <form
-          onSubmit={handleSubmit}
+          onSubmit={handleSubmit(onSubmit)}
           action=""
           className="bg-muted m-auto h-fit w-full max-w-sm overflow-hidden rounded-3xl shadow-md shadow-zinc-950/5 dark:[--color-muted:var(--color-zinc-900)]"
         >
@@ -117,12 +120,10 @@ const LoginForm = () => {
                 </Label>
                 <Input
                   type="email"
-                  required
-                  name="email"
                   id="email"
-                  value={user.email}
-                  onChange={handleChange}
+                  {...register("email")}
                 />
+                {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
               </div>
 
               <div className="space-y-0.5">
@@ -141,13 +142,11 @@ const LoginForm = () => {
                 </div>
                 <Input
                   type="password"
-                  required
-                  name="password"
                   id="password"
                   className="input sz-md variant-mixed"
-                  value={user.password}
-                  onChange={handleChange}
+                  {...register("password")}
                 />
+                {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
               </div>
 
               <div className="w-full"></div>

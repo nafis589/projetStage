@@ -3,28 +3,37 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import useLoading from "@/hooks/useLoading";
 import { useRouter } from "next/navigation";
 import { UserPlus } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+
+const formSchema = z.object({
+  firstname: z.string().min(2, { message: "Le prénom doit contenir au moins 2 caractères." }),
+  lastname: z.string().min(2, { message: "Le nom de famille doit contenir au moins 2 caractères." }),
+  email: z.string().email({ message: "Veuillez saisir une adresse e-mail valide." }),
+  password: z.string().min(6, { message: "Le mot de passe doit contenir au moins 6 caractères." }),
+});
+
+type FormData = z.infer<typeof formSchema>;
 
 const RegisterForm = () => {
   const { toast } = useToast();
   const { setLoading } = useLoading();
   const router = useRouter();
-  const [user, setUser] = useState({
-    firstname: "",
-    lastname: "",
-    password: "",
-    email: "",
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormData>({
+    resolver: zodResolver(formSchema),
   });
 
-  const handleSubmit = async (
-    e: React.FormEvent<HTMLFormElement>
-  ): Promise<void> => {
-    e.preventDefault();
+  const onSubmit = async (data: FormData) => {
     setLoading(true);
 
     try {
@@ -33,7 +42,7 @@ const RegisterForm = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(user),
+        body: JSON.stringify(data),
       });
 
       if (!response.ok) {
@@ -45,8 +54,8 @@ const RegisterForm = () => {
         return;
       }
 
-      const data = await response.json();
-      console.log("Inscription réussie :", data);
+      const responseData = await response.json();
+      console.log("Inscription réussie :", responseData);
 
       toast({
         variant: "success",
@@ -68,14 +77,6 @@ const RegisterForm = () => {
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setUser((prevUser) => ({
-      ...prevUser,
-      [name]: value,
-    }));
-  };
-
   return (
     <>
       <header className="bg-black text-white px-6 py-4 fixed w-full top-0 z-50">
@@ -88,8 +89,7 @@ const RegisterForm = () => {
       </header>
       <section className="flex min-h-screen bg-zinc-50 px-4 py-16 md:py-32 dark:bg-transparent">
         <form
-          action=""
-          onSubmit={handleSubmit}
+          onSubmit={handleSubmit(onSubmit)}
           className="bg-muted m-auto h-fit w-full max-w-sm overflow-hidden rounded-[calc(var(--radius)+.125rem)] shadow-md shadow-zinc-950/5 dark:[--color-muted:var(--color-zinc-900)]"
         >
           <div className="bg-card -m-px rounded-[calc(var(--radius)+.125rem)] border p-8 pb-6">
@@ -117,12 +117,10 @@ const RegisterForm = () => {
                   </Label>
                   <Input
                     type="text"
-                    required
-                    name="firstname"
                     id="firstname"
-                    value={user.firstname}
-                    onChange={handleChange}
+                    {...register("firstname")}
                   />
+                  {errors.firstname && <p className="text-red-500 text-xs mt-1">{errors.firstname.message}</p>}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="lastname" className="block text-sm">
@@ -130,12 +128,10 @@ const RegisterForm = () => {
                   </Label>
                   <Input
                     type="text"
-                    required
-                    name="lastname"
                     id="lastname"
-                    value={user.lastname}
-                    onChange={handleChange}
+                    {...register("lastname")}
                   />
+                  {errors.lastname && <p className="text-red-500 text-xs mt-1">{errors.lastname.message}</p>}
                 </div>
               </div>
 
@@ -145,12 +141,10 @@ const RegisterForm = () => {
                 </Label>
                 <Input
                   type="email"
-                  required
-                  name="email"
                   id="email"
-                  value={user.email}
-                  onChange={handleChange}
+                  {...register("email")}
                 />
+                {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
               </div>
 
               <div className="space-y-0.5">
@@ -169,13 +163,11 @@ const RegisterForm = () => {
                 </div>
                 <Input
                   type="password"
-                  required
-                  name="password"
                   id="password"
-                  value={user.password}
                   className="input sz-md variant-mixed"
-                  onChange={handleChange}
+                  {...register("password")}
                 />
+                {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
               </div>
 
               <div className="w-full"></div>

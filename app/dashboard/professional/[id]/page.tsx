@@ -29,6 +29,9 @@ import {
   Search,
 } from "lucide-react";
 import type { Map, Marker, MapMouseEvent } from "maplibre-gl";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 
 // Types
 
@@ -115,12 +118,8 @@ interface CardProps {
   className?: string;
 }
 
-interface InputProps {
+interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
-  type?: string;
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  placeholder?: string;
   className?: string;
 }
 
@@ -131,6 +130,7 @@ interface ButtonProps {
   className?: string;
   icon?: React.ComponentType<{ size: number }>;
   disabled?: boolean;
+  type?: "button" | "submit" | "reset"; // <-- Added type prop
 }
 
 interface TableAction<T> {
@@ -171,10 +171,8 @@ const Card: React.FC<CardProps> = ({ children, className = "" }) => (
 const Input: React.FC<InputProps> = ({
   label,
   type = "text",
-  value,
-  onChange,
-  placeholder,
   className = "",
+  ...props
 }) => (
   <div className={`mb-4 ${className}`}>
     {label && (
@@ -184,9 +182,7 @@ const Input: React.FC<InputProps> = ({
     )}
     <input
       type={type}
-      value={value || ""}
-      onChange={onChange}
-      placeholder={placeholder}
+      {...props}
       className="w-full px-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
     />
   </div>
@@ -199,6 +195,7 @@ export const Button: React.FC<ButtonProps> = ({
   className = "",
   icon: Icon,
   disabled,
+  type = "button", // <-- Default to 'button'
 }) => {
   const baseClasses =
     "px-6 py-3 rounded-2xl shadow-md font-medium transition-all duration-200 flex items-center gap-2";
@@ -212,6 +209,7 @@ export const Button: React.FC<ButtonProps> = ({
     <button
       onClick={onClick}
       disabled={disabled}
+      type={type} // <-- Forward type prop
       className={`${baseClasses} ${variants[variant]} ${
         disabled ? "opacity-50 cursor-not-allowed" : ""
       } ${className || ""}`}
@@ -464,133 +462,190 @@ const Dashboard: React.FC = () => (
   </div>
 );
 
+const profileSchema = z.object({
+  firstname: z.string().min(2, "Le prénom est trop court"),
+  lastname: z.string().min(2, "Le nom est trop court"),
+  email: z.string().email("L'adresse e-mail n'est pas valide"),
+  bio: z.string().max(500, "La biographie ne peut pas dépasser 500 caractères").optional(),
+  phone: z.string().regex(/^\d{10}$/, "Le numéro de téléphone doit contenir 10 chiffres").optional(),
+  address: z.string().optional(),
+  city: z.string().optional(),
+});
+
+type ProfileFormData = z.infer<typeof profileSchema>;
+
 const Profile: React.FC<{ professionalId: string }> = ({ professionalId }) => {
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
   const { toast } = useToast();
-  const [profile, setProfile] = useState<Profile>({
-    firstname: "",
-    lastname: "",
-    email: "",
-    bio: "",
-    phone: "",
-    address: "",
-    city: "",
-    services: "",
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    formState: { errors, isSubmitting },
+  } = useForm<ProfileFormData>({
+    resolver: zodResolver(profileSchema),
   });
 
-  const handleChange = (field: keyof Profile, value: string) => {
-    setProfile((prev) => ({ ...prev, [field]: value }));
-  };
-
   useEffect(() => {
-    const fetchServices = async () => {
+    const fetchProfile = async () => {
       try {
         const response = await fetch(`/api/professionals/${professionalId}`);
-        if (!response.ok) {
-          throw new Error("Failed to fetch services");
+        if (response.ok) {
+          const data = await response.json();
+          setProfile(data);
+          // Set form values
+          setValue("firstname", data[0].firstname);
+          setValue("lastname", data[0].lastname);
+          setValue("email", data[0].email);
+          setValue("bio", data[0].bio);
+          setValue("phone", data[0].phone);
+          setValue("address", data[0].address);
+          setValue("city", data[0].city);
         }
-        const data = await response.json();
-
-        // Ensure all fields are strings to prevent controlled/uncontrolled input issues
-        setProfile({
-          firstname: data[0].firstname,
-          lastname: data[0].lastname || "",
-          email: data[0].email || "",
-          bio: data[0].bio || "",
-          phone: data[0].phone || "",
-          address: data[0].address || "",
-          city: data[0].city || "",
-          services: data[0].profession || "",
-        });
-        console.log("voici:", profile);
       } catch (error) {
-        console.error("Error fetching services:", error);
+        console.error("Failed to fetch profile", error);
+        toast({
+          variant: "destructive",
+          title: "Erreur",
+          description: "Impossible de charger le profil.",
+        });
       }
     };
+    fetchProfile();
+  }, [professionalId, toast, setValue]);
 
-    fetchServices();
-  }, [professionalId]);
-
-  const handleSave = async () => {
+  const onSubmit = async (data: ProfileFormData) => {
     try {
       const response = await fetch(`/api/professionals/${professionalId}`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(profile),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
       });
-      console.log("Updating profile:", profile);
 
-      if (!response.ok) {
-        throw new Error("Failed to update profile");
+      if (response.ok) {
+        const updatedProfile = await response.json();
+        setProfile(updatedProfile);
+        setIsEditing(false);
+        toast({
+          variant: "success",
+          title: "Profil mis à jour",
+          description: "Vos informations ont été enregistrées.",
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Erreur",
+          description: "La mise à jour du profil a échoué.",
+        });
       }
-
-      const data = await response.json();
-      console.log("Profile updated successfully:", data);
-      // Optionally, show a success message to the user
-      toast({
-        variant: "success",
-        title: "Mise à jour !",
-        description: "Profil mis à jour avec succès.",
-      });
     } catch (error) {
-      console.error("Error updating profile:", error);
-      // Optionally, show an error message to the user
+      console.error("Failed to save profile", error);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Une erreur s'est produite.",
+      });
     }
   };
 
+
+  if (!profile) {
+    return <div>Chargement...</div>;
+  }
+
   return (
     <Card>
-      <h3 className="text-xl font-bold text-black mb-6">
-        Informations personnelles
-      </h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Input
-          label="Prénom"
-          value={profile.firstname}
-          onChange={(e) => handleChange("firstname", e.target.value)}
-        />
-        <Input
-          label="Nom"
-          value={profile.lastname}
-          onChange={(e) => handleChange("lastname", e.target.value)}
-        />
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-xl font-bold text-black">
+          Informations personnelles
+        </h3>
+        <Button
+          onClick={() => setIsEditing(!isEditing)}
+          variant="secondary"
+          icon={isEditing ? X : Edit3}
+        >
+          {isEditing ? "Annuler" : "Modifier"}
+        </Button>
+      </div>
+
+      <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Input
+            label="Prénom"
+            {...register("firstname")}
+            placeholder="Votre prénom"
+            disabled={!isEditing}
+          />
+           {errors.firstname && <p className="text-red-500 text-xs">{errors.firstname.message}</p>}
+          <Input
+            label="Nom"
+            {...register("lastname")}
+            placeholder="Votre nom"
+            disabled={!isEditing}
+          />
+           {errors.lastname && <p className="text-red-500 text-xs">{errors.lastname.message}</p>}
+        </div>
         <Input
           label="Email"
           type="email"
-          value={profile.email}
-          onChange={(e) => handleChange("email", e.target.value)}
+          {...register("email")}
+          placeholder="Votre email"
+          disabled={!isEditing}
         />
-        <Input
-          label="Téléphone"
-          value={profile.phone}
-          onChange={(e) => handleChange("phone", e.target.value)}
-        />
-        <Input
-          label="Adresse"
-          value={profile.address}
-          onChange={(e) => handleChange("address", e.target.value)}
-        />
+        {errors.email && <p className="text-red-500 text-xs">{errors.email.message}</p>}
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Bio
+          </label>
+          <textarea
+            {...register("bio")}
+            rows={4}
+            className="w-full px-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+            placeholder="Parlez-nous de vous..."
+            disabled={!isEditing}
+          />
+          {errors.bio && <p className="text-red-500 text-xs">{errors.bio.message}</p>}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Input
+            label="Téléphone"
+            {...register("phone")}
+            placeholder="Votre téléphone"
+            disabled={!isEditing}
+          />
+           {errors.phone && <p className="text-red-500 text-xs">{errors.phone.message}</p>}
+          <Input
+            label="Adresse"
+            {...register("address")}
+            placeholder="Votre adresse"
+            disabled={!isEditing}
+          />
+        </div>
         <Input
           label="Ville"
-          value={profile.city}
-          onChange={(e) => handleChange("city", e.target.value)}
+          {...register("city")}
+          placeholder="Votre ville"
+          disabled={!isEditing}
         />
-      </div>
-      <Input
-        label="Bio"
-        value={profile.bio}
-        onChange={(e) => handleChange("bio", e.target.value)}
-      />
-      <Input
-        label="Services proposés"
-        value={profile.services}
-        onChange={(e) => handleChange("services", e.target.value)}
-      />
-      <Button icon={Check} onClick={handleSave}>
-        Sauvegarder les modifications
-      </Button>
-      <Toaster />
+
+        {isEditing && (
+          <div className="flex justify-end gap-4">
+            <Button
+              type="button"
+              onClick={() => setIsEditing(false)}
+              variant="secondary"
+            >
+              Annuler
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Sauvegarde..." : "Sauvegarder"}
+            </Button>
+          </div>
+        )}
+      </form>
     </Card>
   );
 };
