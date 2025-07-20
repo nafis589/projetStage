@@ -11,8 +11,7 @@ import {
   Briefcase,
   Eye,
   ChevronRight,
-  Zap,
-  User
+  Zap
 } from 'lucide-react';
 import {AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { LucideIcon } from "lucide-react";
@@ -36,20 +35,54 @@ interface Booking {
   client: string;
   service: string;
   date: string;
-  status: 'confirmed' | 'pending';
+  status: 'confirmed' | 'pending' | 'completed' | 'cancelled' | 'accepted';
   price: string;
   avatar: React.ReactNode;
+}
+
+interface DashboardData {
+  totalBookings: number;
+  acceptanceRate: number;
+  monthlyRevenue: number;
+  avgRating: number;
+  weeklyData: { name: string; reservations: number; revenus: number }[];
+  recentBookings: Booking[];
+  notifications: {
+    newRequests: number;
+    todayAppointments: number;
+    pendingReviews: number;
+  };
 }
 
 const Dashboard: React.FC = () => {
   const [activeCard, setActiveCard] = useState<string | null>(null);
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setIsLoaded(true);
+    const fetchData = async () => {
+      try {
+        const response = await fetch('/api/dashboard');
+        if (!response.ok) {
+          throw new Error('Failed to fetch dashboard data');
+        }
+        const data = await response.json();
+        setDashboardData(data);
+      } catch (err) {
+        setError((err as Error).message);
+      } finally {
+        setIsLoading(false);
+        setIsLoaded(true);
+      }
+    };
+
+    fetchData();
   }, []);
 
-  // Données pour les graphiques
+  // Données pour les graphiques - SERONT REMPLACÉES PAR LES DONNÉES DE L'API
+  /*
   const weeklyData = [
     { name: 'Lun', reservations: 12, revenus: 450 },
     { name: 'Mar', reservations: 19, revenus: 680 },
@@ -59,6 +92,7 @@ const Dashboard: React.FC = () => {
     { name: 'Sam', reservations: 30, revenus: 1200 },
     { name: 'Dim', reservations: 18, revenus: 640 }
   ];
+  */
 
   const ratingData = [
     { name: '5★', value: 65, color: '#10B981' },
@@ -67,12 +101,15 @@ const Dashboard: React.FC = () => {
     { name: '2★', value: 2, color: '#6B7280' }
   ];
 
+  // Données de réservations récentes - SERONT REMPLACÉES PAR LES DONNÉES DE L'API
+  /*
   const recentBookings: Booking[] = [
     { id: 1, client: 'Marie Dubois', service: 'Ménage Premium', date: '2025-07-20', status: 'confirmed', price: '€85', avatar: <User size={30} /> },
     { id: 2, client: 'Pierre Martin', service: 'Jardinage Complet', date: '2025-07-21', status: 'pending', price: '€120', avatar: <User size={30} /> },
     { id: 3, client: 'Sophie Bernard', service: 'Nettoyage Vitres', date: '2025-07-22', status: 'confirmed', price: '€65', avatar: <User size={30} /> },
     { id: 4, client: 'Lucas Petit', service: 'Bricolage', date: '2025-07-23', status: 'pending', price: '€95', avatar: <User size={30} /> }
   ];
+  */
 
   const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, trend, color, delay = 0 }) => (
     <div
@@ -116,6 +153,34 @@ const Dashboard: React.FC = () => {
       </div>
     </div>
   );
+  
+  if (isLoading) {
+    return (
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
+            <div className="text-center">
+                <p className="text-lg font-semibold text-gray-700">Chargement des données du tableau de bord...</p>
+                {/* Vous pouvez ajouter un spinner ici */}
+            </div>
+        </div>
+    );
+  }
+
+  if (error) {
+    return (
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-pink-50">
+            <div className="text-center p-8 bg-white/70 rounded-3xl shadow-2xl">
+                <AlertCircle size={48} className="text-red-500 mx-auto mb-4" />
+                <h2 className="text-2xl font-bold text-red-800">Erreur</h2>
+                <p className="text-red-600 mt-2">{error}</p>
+            </div>
+        </div>
+    );
+  }
+
+  if (!dashboardData) {
+      return null; // Ou un autre état de secours
+  }
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 p-6">
@@ -123,7 +188,7 @@ const Dashboard: React.FC = () => {
       <div className={`mb-8 transition-all duration-1000 ${isLoaded ? 'translate-y-0 opacity-100' : '-translate-y-4 opacity-0'}`}>
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-black via-gray-600 to-gray-400 bg-clip-text text-transparent">
+            <h1 className="text-4xl font-bold">
               Tableau de Bord
             </h1>
             <p className="text-gray-600 mt-2">Gérez votre activité en temps réel</p>
@@ -137,33 +202,29 @@ const Dashboard: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <StatCard
           title="Réservations Totales"
-          value="156"
+          value={String(dashboardData.totalBookings)}
           icon={Calendar}
-          trend="12"
           color="from-blue-600 to-blue-800"
           delay={100}
         />
         <StatCard
           title="Taux d'Acceptation"
-          value="94%"
+          value={`${dashboardData.acceptanceRate}%`}
           icon={CheckCircle}
-          trend="8"
           color="from-emerald-600 to-emerald-800"
           delay={200}
         />
         <StatCard
           title="Revenus ce Mois"
-          value="€3,245"
+          value={`€${dashboardData.monthlyRevenue}`}
           icon={Euro}
-          trend="18"
           color="from-purple-600 to-purple-800"
           delay={300}
         />
         <StatCard
           title="Note Moyenne"
-          value="4.9"
+          value={String(dashboardData.avgRating)}
           icon={Star}
-          trend="2"
           color="from-amber-600 to-amber-800"
           delay={400}
         />
@@ -188,7 +249,7 @@ const Dashboard: React.FC = () => {
           </div>
           
           <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={weeklyData}>
+            <AreaChart data={dashboardData.weeklyData}>
               <defs>
                 <linearGradient id="colorReservations" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3}/>
@@ -288,7 +349,7 @@ const Dashboard: React.FC = () => {
           </div>
           
           <div className="space-y-4">
-            {recentBookings.map((booking, index) => (
+            {dashboardData.recentBookings.map((booking, index) => (
               <div
                 key={booking.id}
                 className="group flex items-center justify-between p-4 rounded-2xl bg-gradient-to-r from-white/50 to-white/30 hover:from-white/70 hover:to-white/50 transition-all duration-300 cursor-pointer"
@@ -355,9 +416,9 @@ const Dashboard: React.FC = () => {
               <h4 className="font-semibold text-red-900">Notifications</h4>
             </div>
             <div className="space-y-2 text-sm">
-              <p className="text-red-700">• 3 nouvelles demandes à traiter</p>
-              <p className="text-red-700">• 2 rendez-vous aujourd&apos;hui</p>
-              <p className="text-red-700">• 1 avis en attente de réponse</p>
+              <p className="text-red-700">• {dashboardData.notifications.newRequests} nouvelles demandes à traiter</p>
+              <p className="text-red-700">• {dashboardData.notifications.todayAppointments} rendez-vous aujourd&apos;hui</p>
+              <p className="text-red-700">• {dashboardData.notifications.pendingReviews} avis en attente de réponse</p>
             </div>
           </div>
         </div>
