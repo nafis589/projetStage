@@ -368,13 +368,23 @@ const Dashboard: React.FC = () => {
                 
                 <div className="flex items-center space-x-4">
                   <span className="font-bold text-lg text-gray-900">{booking.price}</span>
-                  <div className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    booking.status === 'confirmed' 
-                      ? 'bg-green-100 text-green-700' 
-                      : 'bg-yellow-100 text-yellow-700'
-                  }`}>
-                    {booking.status === 'confirmed' ? 'Confirmée' : 'En attente'}
-                  </div>
+                  <div
+  className={`px-3 py-1 rounded-full text-xs font-medium ${
+    booking.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+    booking.status === 'accepted' ? 'bg-green-100 text-green-700' :
+    booking.status === 'completed' ? 'bg-blue-100 text-blue-700' :
+    booking.status === 'cancelled' ? 'bg-gray-100 text-gray-700' :
+    'bg-gray-100 text-gray-700' // fallback
+  }`}
+>
+  {
+    booking.status === 'pending' ? 'En attente' :
+    booking.status === 'accepted' ? 'Acceptée' :
+    booking.status === 'completed' ? 'Terminée' :
+    booking.status === 'cancelled' ? 'Annulée' :
+    'Inconnu'
+  }
+</div>
                   <ChevronRight className="text-gray-400 group-hover:translate-x-1 transition-transform" size={20} />
                 </div>
               </div>
