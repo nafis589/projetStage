@@ -204,7 +204,7 @@ const Dashboard: React.FC = () => {
           title="Réservations Totales"
           value={String(dashboardData.totalBookings)}
           icon={Calendar}
-          color="from-blue-600 to-blue-800"
+          color="bg-gradient-to-r from-blue-600 to-blue-800 bg-opacity-60"
           delay={100}
         />
         <StatCard
