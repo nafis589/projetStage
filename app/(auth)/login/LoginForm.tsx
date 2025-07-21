@@ -108,15 +108,15 @@ const LoginForm = () => {
                 </h1>
               </Link>
               <h1 className="mb-1 mt-4 text-xl font-semibold">
-                Sign In to Geservice
+                Connexion à Geservice
               </h1>
-              <p className="text-sm">Welcome back! Sign in to continue</p>
+              <p className="text-sm">Bienvenue ! connectez-vous pour continuer</p>
             </div>
 
             <div className="mt-6 space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="email" className="block text-sm">
-                  Username
+                  Email
                 </Label>
                 <Input
                   type="email"
@@ -129,14 +129,14 @@ const LoginForm = () => {
               <div className="space-y-0.5">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="pwd" className="text-title text-sm">
-                    Password
+                    Mot de passe
                   </Label>
                   <Button asChild variant="link" size="sm">
                     <Link
                       href="#"
                       className="link intent-info variant-ghost text-sm"
                     >
-                      Forgot your Password ?
+                      Mot de passe oublié ?
                     </Link>
                   </Button>
                 </div>
@@ -164,9 +164,9 @@ const LoginForm = () => {
 
           <div className="p-3">
             <p className="text-accent-foreground text-center text-sm">
-              Don&apos;t have an account ?
+              Vous n&apos;avez pas de compte ?
               <Button asChild variant="link" className="px-2">
-                <Link href="#">Create account</Link>
+                <Link href="/">Créer un compte</Link>
               </Button>
             </p>
           </div>

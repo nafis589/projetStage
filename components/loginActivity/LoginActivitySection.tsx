@@ -1,4 +1,5 @@
 import React from "react";
+import Image from 'next/image';
 const LoginActivitySection = () => {
     return (
       <section className="bg-white py-16">
@@ -25,11 +26,13 @@ const LoginActivitySection = () => {
               </div>
             </div>
             <div>
-              <img 
-                src="https://images.pexels.com/photos/5081930/pexels-photo-5081930.jpeg"
-                alt="Person using mobile app"
-                className="w-full h-96 object-cover rounded-lg shadow-lg"
-              />
+            <Image
+  src="/landingimg.jpg"
+  alt="People getting into Uber"
+  width={1200}  // or appropriate width
+  height={384} // h-96 = 384px
+  className="object-cover rounded-lg shadow-2xl w-full h-96"
+/>
             </div>
           </div>
         </div>

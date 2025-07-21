@@ -11,9 +11,21 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { UserPlus } from "lucide-react";
+const nameRegex = /^[A-Za-zÀ-ÖØ-öø-ÿ' -]+$/;
+
 const formSchema = z.object({
-  firstname: z.string().min(2, { message: "Le prénom doit contenir au moins 2 caractères." }),
-  lastname: z.string().min(2, { message: "Le nom de famille doit contenir au moins 2 caractères." }),
+  firstname: z
+    .string()
+    .min(2, { message: "Le prénom doit contenir au moins 2 caractères." })
+    .regex(nameRegex, {
+      message: "Le prénom ne peut contenir que des lettres, des tirets ou des apostrophes.",
+    }),
+  lastname: z
+    .string()
+    .min(2, { message: "Le nom de famille doit contenir au moins 2 caractères." })
+    .regex(nameRegex, {
+      message: "Le nom de famille ne peut contenir que des lettres, des tirets ou des apostrophes.",
+    }),
   email: z.string().email({ message: "Veuillez saisir une adresse e-mail valide." }),
   password: z.string().min(6, { message: "Le mot de passe doit contenir au moins 6 caractères." }),
 });
@@ -90,7 +102,7 @@ const ProfessionelForm = () => {
       <section className="flex min-h-screen bg-zinc-50 px-4 py-16 md:py-32 dark:bg-transparent">
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="bg-muted m-auto h-fit w-full max-w-sm overflow-hidden rounded-[calc(var(--radius)+.125rem)] shadow-md shadow-zinc-950/5 dark:[--color-muted:var(--color-zinc-900)]"
+          className="m-auto h-fit w-full max-w-sm overflow-hidden rounded-[calc(var(--radius)+.125rem)]"
         >
           <div className="bg-card -m-px rounded-[calc(var(--radius)+.125rem)] border p-8 pb-6">
             <div className="text-center">
@@ -102,10 +114,10 @@ const ProfessionelForm = () => {
                 <UserPlus size={48} />
               </Link>
               <h1 className="text-title mb-1 mt-4 text-xl font-semibold">
-                Create an Account
+                Créer un compte
               </h1>
               <p className="text-sm">
-                Welcome! Create an account to get started
+                Bienvenue ! Créer un compte pour commencer
               </p>
             </div>
 
@@ -113,7 +125,7 @@ const ProfessionelForm = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label htmlFor="firstname" className="block text-sm">
-                    Firstname
+                    Prénom
                   </Label>
                   <Input
                     type="text"
@@ -124,7 +136,7 @@ const ProfessionelForm = () => {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="lastname" className="block text-sm">
-                    Lastname
+                    Nom de famille
                   </Label>
                   <Input
                     type="text"
@@ -137,7 +149,7 @@ const ProfessionelForm = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="email" className="block text-sm">
-                  Username
+                  Email
                 </Label>
                 <Input
                   type="email"
@@ -150,14 +162,14 @@ const ProfessionelForm = () => {
               <div className="space-y-0.5">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="pwd" className="text-title text-sm">
-                    Password
+                    Mot de passe
                   </Label>
                   <Button asChild variant="link" size="sm">
                     <Link
                       href="#"
                       className="link intent-info variant-ghost text-sm"
                     >
-                      Forgot your Password ?
+                      Mot de passe oublié ?
                     </Link>
                   </Button>
                 </div>
@@ -185,9 +197,9 @@ const ProfessionelForm = () => {
 
           <div className="p-3">
             <p className="text-accent-foreground text-center text-sm">
-              Have an account ?
+              Vous avez déjà un compte ?
               <Button asChild variant="link" className="px-2">
-                <Link href="#">Sign In</Link>
+                <Link href="/login">Se connecter</Link>
               </Button>
             </p>
           </div>

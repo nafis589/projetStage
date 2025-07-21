@@ -84,18 +84,15 @@ const Header = () => {
         */}
         {/* Right Menu */}
         <div className="hidden md:flex items-center space-x-6">
-          <button className="hover:text-gray-300 transition-colors">EN</button>
-          <button className="hover:text-gray-300 transition-colors">
-            Help
-          </button>
+          
           <button onClick={handleClickLogin} className="hover:text-gray-300 transition-colors">
-            Log in
+            Connexion
           </button>
           <button 
             onClick={openSignupModal}
             className="bg-white text-black px-4 py-2 rounded hover:bg-gray-200 transition-colors"
           >
-            Sign up
+            S&apos;inscrire
           </button>
         </div>
 
@@ -124,24 +121,7 @@ const Header = () => {
       {isMenuOpen && (
         <div className="md:hidden bg-black border-t border-gray-800 mt-4">
           <nav className="px-6 py-4 space-y-4">
-            <button className="block w-full text-left hover:text-gray-300">
-              Ride
-            </button>
-            <button className="block w-full text-left hover:text-gray-300">
-              Drive
-            </button>
-            <button className="block w-full text-left hover:text-gray-300">
-              Business
-            </button>
-            <button className="block w-full text-left hover:text-gray-300">
-              Uber Eats
-            </button>
-            <button className="block w-full text-left hover:text-gray-300">
-              About
-            </button>
-            <button className="block w-full text-left hover:text-gray-300">
-              Help
-            </button>
+            
             <button className="block w-full text-left hover:text-gray-300">
               Log in
             </button>

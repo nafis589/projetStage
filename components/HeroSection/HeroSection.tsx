@@ -2,6 +2,7 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
 import { Calendar, Clock, ChevronDown } from "lucide-react";
+import Image from 'next/image';
 
 
 const HeroSection = () => {
@@ -321,11 +322,13 @@ const HeroSection = () => {
             
             {/* Right Image */}
             <div className="relative">
-              <img 
-                src="/landingimg.jpg" 
-                alt="People getting into Uber"
-                className="w-full h-96 object-cover rounded-lg shadow-2xl"
-              />
+            <Image
+  src="/landingimg.jpg"
+  alt="People getting into Uber"
+  width={1200}  // or appropriate width
+  height={384} // h-96 = 384px
+  className="object-cover rounded-lg shadow-2xl w-full h-96"
+/>
             </div>
           </div>
         </div>
