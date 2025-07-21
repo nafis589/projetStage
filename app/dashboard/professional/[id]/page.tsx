@@ -1128,7 +1128,7 @@ const Bookings: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  const fetchBookings = async () => {
+  const fetchBookings = React.useCallback(async () => {
     try {
       const response = await fetch('/api/bookings?view=professional');
       if (response.ok) {
@@ -1152,11 +1152,11 @@ const Bookings: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     fetchBookings();
-  }, []);
+  }, [fetchBookings]);
 
   const handleUpdateBookingStatus = async (bookingId: number, status: 'accepted' | 'cancelled' | 'completed') => {
     try {
@@ -1842,7 +1842,7 @@ const ProfessionalDashboard = ({ params }: Props) => {
   }, [professionalId]);
 
   if (status === "loading") {
-    return <div>Chargement...</div>;
+    return <div className="flex items-center justify-center h-screen"><div>Chargement...</div></div>;
   }
 
   const renderSection = (): React.ReactNode => {
