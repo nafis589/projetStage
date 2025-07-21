@@ -70,6 +70,7 @@ const Dashboard: React.FC = () => {
           throw new Error('Failed to fetch dashboard data');
         }
         const data = await response.json();
+        console.log(data);
         setDashboardData(data);
       } catch (err) {
         setError((err as Error).message);
@@ -219,7 +220,7 @@ const Dashboard: React.FC = () => {
         />
         <StatCard
           title="Revenus ce Mois"
-          value={`€${dashboardData.monthlyRevenue}`}
+          value={`${dashboardData.monthlyRevenue} F`}
           icon={Euro}
           color="from-purple-600 to-purple-800"
           delay={300}

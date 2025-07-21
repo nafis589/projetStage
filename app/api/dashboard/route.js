@@ -136,7 +136,7 @@ export async function GET() {
         service: b.service,
         date: b.booking_time,
         status: b.status,
-        price: `€${b.price}`,
+        price: `${b.price} FCFA`,
         avatar: "User" // Placeholder, to be handled on the frontend
       })),
       notifications: {
