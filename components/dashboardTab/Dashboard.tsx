@@ -150,7 +150,7 @@ const Dashboard: React.FC = () => {
   
   if (isLoading) {
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-white via-gray-100 to-gray-200">
             <div className="text-center">
                 <p className="text-lg font-semibold text-gray-700">Chargement des données du tableau de bord...</p>
                 {/* Vous pouvez ajouter un spinner ici */}

@@ -394,12 +394,26 @@ const Topbar: React.FC<TopbarProps> = ({ username, onMenuClick }) => (
 // Section Components
 <Dashboard />
 
+const nameRegex = /^[A-Za-zÀ-ÿ' -]+$/;
+
 const profileSchema = z.object({
-  firstname: z.string().min(2, "Le prénom est trop court"),
-  lastname: z.string().min(2, "Le nom est trop court"),
+  firstname: z
+    .string()
+    .min(2, "Le prénom est trop court")
+    .regex(nameRegex, "Le prénom ne doit contenir que des lettres et caractères valides"),
+  lastname: z
+    .string()
+    .min(2, "Le nom est trop court")
+    .regex(nameRegex, "Le nom ne doit contenir que des lettres et caractères valides"),
   email: z.string().email("L'adresse e-mail n'est pas valide"),
-  bio: z.string().max(500, "La biographie ne peut pas dépasser 500 caractères").optional(),
-  phone: z.string().regex(/^\d{10}$/, "Le numéro de téléphone doit contenir 10 chiffres").optional(),
+  bio: z
+    .string()
+    .max(500, "La biographie ne peut pas dépasser 500 caractères")
+    .optional(),
+  phone: z
+    .string()
+    .regex(/^\d{10}$/, "Le numéro de téléphone doit contenir 10 chiffres")
+    .optional(),
   address: z.string().optional(),
   city: z.string().optional(),
 });
@@ -483,7 +497,7 @@ const Profile: React.FC<{ professionalId: string }> = ({ professionalId }) => {
 
 
   if (!profile) {
-    return <div>Chargement...</div>;
+    return <div className="flex items-center justify-center h-screen"><div>Chargement...</div></div>;
   }
 
   return (
