@@ -157,7 +157,7 @@ const HeroSection = () => {
                     />
                   </div>
                   <div className="relative">
-                    <div className="absolute left-3 top-3 w-3 h-3 bg-gray-400 rounded-sm"></div>
+                    <div className="absolute left-3 top-3 w-3 h-3 bg-black rounded-full"></div>
                     <input
                       type="text"
                       placeholder="Entrez votre adresse"
@@ -315,7 +315,7 @@ const HeroSection = () => {
               
               <div className="mt-4">
                 <button className="text-gray-600 underline hover:text-black transition-colors">
-                  Log in to see your recent activity
+                  voir vos activitées récente
                 </button>
               </div>
             </div>

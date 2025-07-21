@@ -27,12 +27,13 @@ const LoginActivitySection = () => {
             </div>
             <div>
             <Image
-  src="/landingimg.jpg"
+  src="https://images.pexels.com/photos/5081930/pexels-photo-5081930.jpeg"
   alt="People getting into Uber"
   width={1200}  // or appropriate width
   height={384} // h-96 = 384px
   className="object-cover rounded-lg shadow-2xl w-full h-96"
 />
+
             </div>
           </div>
         </div>
