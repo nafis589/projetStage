@@ -723,8 +723,20 @@ const Services: React.FC<{ professionalId: string }> = ({ professionalId }) => {
     },
     {
       icon: Trash2,
-      onClick: (serviceData: Record<string, string | number>) => {
-        setServices(services.filter((s) => s.name !== serviceData.name));
+      onClick: async (serviceData: Record<string, string | number>) => {
+        const service = services.find((s) => s.name === serviceData.name);
+        if (!service) return;
+        try {
+          const response = await fetch(`/api/service/${service.id}`, {
+            method: "DELETE",
+          });
+          if (!response.ok) {
+            throw new Error("Erreur lors de la suppression du service");
+          }
+          setServices(services.filter((s) => s.id !== service.id));
+        } catch (error) {
+          console.error("Erreur lors de la suppression du service:", error);
+        }
       },
       className: "hover:bg-red-50 text-red-600",
     },

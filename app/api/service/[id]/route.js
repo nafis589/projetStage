@@ -59,3 +59,23 @@ export async function GET(request, { params }) {
     );
   }
 }
+
+export async function DELETE(request, { params }) {
+  try {
+    const serviceId = params.id;
+    if (!serviceId) {
+      return NextResponse.json(
+        { error: "Service ID manquant" },
+        { status: 400 }
+      );
+    }
+    await query("DELETE FROM services WHERE id = ?", [serviceId]);
+    return NextResponse.json({ message: "Service supprimé avec succès" }, { status: 200 });
+  } catch (error) {
+    console.error("Erreur lors de la suppression du service:", error);
+    return NextResponse.json(
+      { error: "Erreur lors de la suppression du service" },
+      { status: 500 }
+    );
+  }
+}
