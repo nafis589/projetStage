@@ -247,7 +247,7 @@ export default function BookingHistory() {
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
                           <div className="flex items-center gap-1 font-medium text-gray-900">
                             <DollarSign size={14} className="text-gray-400" />
-                            <span>{booking.price.toFixed(2)} €</span>
+                            <span>{booking.price.toFixed(2)} FCFA</span>
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
