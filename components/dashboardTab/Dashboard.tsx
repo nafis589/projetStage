@@ -28,6 +28,7 @@ interface QuickActionProps {
     title: string;
     icon: LucideIcon; // This includes 'size', 'color', 'className', etc.
     color: string;
+    onClick?: () => void;
 }
 interface Booking {
   id: number;
@@ -54,7 +55,11 @@ interface DashboardData {
   ratingDistribution: { rating: number; count: number }[];
 }
 
-const Dashboard: React.FC = () => {
+interface DashboardProps {
+  onQuickAction?: (section: string) => void;
+}
+
+const Dashboard: React.FC<DashboardProps> = ({ onQuickAction }) => {
   const [activeCard, setActiveCard] = useState<string | null>(null);
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
@@ -136,8 +141,8 @@ const Dashboard: React.FC = () => {
     </div>
   );
 
-  const QuickAction: React.FC<QuickActionProps> = ({ title, icon: Icon, color }) => (
-    <div className="group relative overflow-hidden rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 p-4 cursor-pointer transition-all duration-300 hover:bg-white/10 hover:scale-105">
+  const QuickAction: React.FC<QuickActionProps> = ({ title, icon: Icon, color, onClick }) => (
+    <div className="group relative overflow-hidden rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 p-4 cursor-pointer transition-all duration-300 hover:bg-white/10 hover:scale-105" onClick={onClick}>
       <div className="flex items-center space-x-3">
         <div className={`rounded-xl p-2 ${color}`}>
           <Icon size={20} className="text-white" />
@@ -405,21 +410,25 @@ const Dashboard: React.FC = () => {
               title="Gérer Disponibilités"
               icon={Calendar}
               color="bg-gray-400"
+              onClick={() => onQuickAction && onQuickAction('availability')}
             />
             <QuickAction 
               title="Modifier Profil"
               icon={Settings}
               color="bg-gray-400"
+              onClick={() => onQuickAction && onQuickAction('profile')}
             />
             <QuickAction 
               title="Gérer Localisation"
               icon={MapPin}
               color="bg-gray-400"
+              onClick={() => onQuickAction && onQuickAction('location')}
             />
             <QuickAction 
               title="Services Offerts"
               icon={Briefcase}
               color="bg-gray-400"
+              onClick={() => onQuickAction && onQuickAction('services')}
             />
           </div>
 

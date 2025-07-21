@@ -1911,7 +1911,7 @@ const ProfessionalDashboard = ({ params }: Props) => {
   const renderSection = (): React.ReactNode => {
     switch (activeSection) {
       case "dashboard":
-        return <Dashboard />;
+        return <Dashboard onQuickAction={setActiveSection} />;
       case "profile":
         return <Profile professionalId={professionalId} />;
       case "services":

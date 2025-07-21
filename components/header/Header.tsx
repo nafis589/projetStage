@@ -122,10 +122,10 @@ const Header = () => {
         <div className="md:hidden bg-black border-t border-gray-800 mt-4">
           <nav className="px-6 py-4 space-y-4">
             
-            <button className="block w-full text-left hover:text-gray-300">
+            <button onClick={handleClickLogin} className="block w-full text-left hover:text-gray-300">
               Log in
             </button>
-            <button className="bg-white text-black px-4 py-2 rounded w-full">
+            <button onClick={openSignupModal} className="bg-white text-black px-4 py-2 rounded w-full">
               Sign up
             </button>
           </nav>
