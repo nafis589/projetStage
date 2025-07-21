@@ -1,14 +1,16 @@
 import { NextResponse } from "next/server";
 import util from "util";
 import db from "@/util/db";
+import bcrypt from "bcrypt";
 
 const query = util.promisify(db.query).bind(db);
 
 export const POST = async (req) => {
   const user = await req.json();
   try {
+    const hashedPassword = await bcrypt.hash(user.password, 10);
     const results = await query(
-      `INSERT INTO users (firstname, lastname, email, password, role) VALUES ('${user.firstname}', '${user.lastname}', '${user.email}', '${user.password}', 'client')`
+      `INSERT INTO users (firstname, lastname, email, password, role) VALUES ('${user.firstname}', '${user.lastname}', '${user.email}', '${hashedPassword}', 'client')`
     );
     const userId= results.insertId;
     await query(

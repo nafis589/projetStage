@@ -2,6 +2,7 @@ import util from "util";
 import db from "@/util/db";
 import NextAuth from "next-auth/next";
 import CredentialsProvider from "next-auth/providers/credentials";
+import bcrypt from "bcrypt";
 const query = util.promisify(db.query).bind(db);
 
 export const authOptions = {
@@ -39,7 +40,8 @@ export const authOptions = {
                 }
 
                 if (user.password){
-                    return user.password === credentials.password ? user : null;
+                    const isValid = await bcrypt.compare(credentials.password, user.password);
+                    return isValid ? user : null;
                 }
             }
         })

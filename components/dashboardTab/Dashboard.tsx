@@ -10,8 +10,7 @@ import {
   MapPin,
   Briefcase,
   Eye,
-  ChevronRight,
-  Zap
+  ChevronRight
 } from 'lucide-react';
 import {AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { LucideIcon } from "lucide-react";
@@ -439,13 +438,8 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Footer avec micro-animations */}
-      <div className={`text-center text-gray-500 transition-all duration-1000 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`} style={{ transitionDelay: '900ms' }}>
-        <p className="flex items-center justify-center space-x-2">
-          <Zap size={16} className="text-yellow-500" />
-          <span>Dashboard mis à jour en temps réel</span>
-        </p>
-      </div>
+      
+      
     </div>
   );
 };
