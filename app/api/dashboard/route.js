@@ -48,7 +48,19 @@ export async function GET() {
         "SELECT AVG(rating) as avgRating FROM reviews WHERE professional_id = ?",
         [professionalId]
     );
-    const avgRating = avgRatingResult[0] && avgRatingResult[0].avgRating ? avgRatingResult[0].avgRating : 0;
+    let avgRating = avgRatingResult[0] && avgRatingResult[0].avgRating != null ? Number(avgRatingResult[0].avgRating) : 0;
+    avgRating = Number.isFinite(avgRating) ? avgRating : 0;
+
+    // Répartition des avis (nombre d'avis par note)
+    const ratingDistributionResult = await query(
+      'SELECT rating, COUNT(*) as count FROM reviews WHERE professional_id = ? GROUP BY rating',
+      [professionalId]
+    );
+    // Format: [{ rating: 5, count: 10 }, ...]
+    const ratingDistribution = [1,2,3,4,5].map(rating => {
+      const found = ratingDistributionResult.find(r => Number(r.rating) === rating);
+      return { rating, count: found ? Number(found.count) : 0 };
+    });
 
     // 5. Performance hebdomadaire (7 derniers jours)
     const weeklyPerformanceResult = await query(
@@ -115,7 +127,8 @@ export async function GET() {
       totalBookings,
       acceptanceRate: parseFloat(acceptanceRate.toFixed(0)),
       monthlyRevenue,
-      avgRating: parseFloat(avgRating.toFixed(1)),
+      avgRating: Number(avgRating.toFixed(1)),
+      ratingDistribution,
       weeklyData,
       recentBookings: recentBookings.map((b) => ({
         id: b.id,

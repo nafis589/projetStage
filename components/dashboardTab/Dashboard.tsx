@@ -52,6 +52,7 @@ interface DashboardData {
     todayAppointments: number;
     pendingReviews: number;
   };
+  ratingDistribution: { rating: number; count: number }[];
 }
 
 const Dashboard: React.FC = () => {
@@ -93,13 +94,6 @@ const Dashboard: React.FC = () => {
     { name: 'Dim', reservations: 18, revenus: 640 }
   ];
   */
-
-  const ratingData = [
-    { name: '5★', value: 65, color: '#10B981' },
-    { name: '4★', value: 25, color: '#F59E0B' },
-    { name: '3★', value: 8, color: '#EF4444' },
-    { name: '2★', value: 2, color: '#6B7280' }
-  ];
 
   // Données de réservations récentes - SERONT REMPLACÉES PAR LES DONNÉES DE L'API
   /*
@@ -180,6 +174,15 @@ const Dashboard: React.FC = () => {
   if (!dashboardData) {
       return null; // Ou un autre état de secours
   }
+
+  // Calcul dynamique pour la répartition des avis
+  const totalReviews = dashboardData.ratingDistribution.reduce((sum, r) => sum + r.count, 0);
+  const ratingData = dashboardData.ratingDistribution.map(r => ({
+    name: `${r.rating}★`,
+    value: totalReviews > 0 ? Math.round((r.count / totalReviews) * 100) : 0,
+    count: r.count,
+    color: r.rating === 5 ? '#10B981' : r.rating === 4 ? '#F59E0B' : r.rating === 3 ? '#EF4444' : r.rating === 2 ? '#6B7280' : '#A3A3A3',
+  }));
 
 
   return (
@@ -318,6 +321,7 @@ const Dashboard: React.FC = () => {
                   border: 'none',
                   borderRadius: '12px'
                 }}
+                formatter={(value, name, props) => [`${props.payload.count} avis (${value}%)`, name]}
               />
             </PieChart>
           </ResponsiveContainer>
@@ -329,7 +333,7 @@ const Dashboard: React.FC = () => {
                   <div className={`w-3 h-3 rounded-full`} style={{ backgroundColor: item.color }}></div>
                   <span className="text-sm font-medium">{item.name}</span>
                 </div>
-                <span className="text-sm text-gray-600">{item.value}%</span>
+                <span className="text-sm text-gray-600">{item.value}% ({item.count} avis)</span>
               </div>
             ))}
           </div>
