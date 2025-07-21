@@ -495,7 +495,6 @@ const Profile: React.FC<{ professionalId: string }> = ({ professionalId }) => {
     }
   };
 
-
   if (!profile) {
     return <div className="flex items-center justify-center h-screen"><div>Chargement...</div></div>;
   }
@@ -517,68 +516,106 @@ const Profile: React.FC<{ professionalId: string }> = ({ professionalId }) => {
 
       <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Input
-            label="Prénom"
-            {...register("firstname")}
-            placeholder="Votre prénom"
-            disabled={!isEditing}
-          />
-           {errors.firstname && <p className="text-red-500 text-xs">{errors.firstname.message}</p>}
-          <Input
-            label="Nom"
-            {...register("lastname")}
-            placeholder="Votre nom"
-            disabled={!isEditing}
-          />
-           {errors.lastname && <p className="text-red-500 text-xs">{errors.lastname.message}</p>}
+          <div className="form-group min-h-[90px]">
+            <Input
+              label="Prénom"
+              {...register("firstname")}
+              placeholder="Votre prénom"
+              disabled={!isEditing}
+              className={errors.firstname ? "border-red-500" : ""}
+            />
+            {errors.firstname && (
+              <p className="text-red-500 text-sm mt-1">{errors.firstname.message}</p>
+            )}
+          </div>
+          <div className="form-group min-h-[90px]">
+            <Input
+              label="Nom"
+              {...register("lastname")}
+              placeholder="Votre nom"
+              disabled={!isEditing}
+              className={errors.lastname ? "border-red-500" : ""}
+            />
+            {errors.lastname && (
+              <p className="text-red-500 text-sm mt-1">{errors.lastname.message}</p>
+            )}
+          </div>
         </div>
-        <Input
-          label="Email"
-          type="email"
-          {...register("email")}
-          placeholder="Votre email"
-          disabled={!isEditing}
-        />
-        {errors.email && <p className="text-red-500 text-xs">{errors.email.message}</p>}
 
-        <div>
+        <div className="form-group min-h-[90px]">
+          <Input
+            label="Email"
+            type="email"
+            {...register("email")}
+            placeholder="Votre email"
+            disabled={!isEditing}
+            className={errors.email ? "border-red-500" : ""}
+          />
+          {errors.email && (
+            <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
+          )}
+        </div>
+
+        <div className="form-group min-h-[140px]">
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Bio
           </label>
           <textarea
             {...register("bio")}
             rows={4}
-            className="w-full px-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+            className={`w-full px-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent ${
+              errors.bio ? "border-red-500" : ""
+            }`}
             placeholder="Parlez-nous de vous..."
             disabled={!isEditing}
           />
-          {errors.bio && <p className="text-red-500 text-xs">{errors.bio.message}</p>}
+          {errors.bio && (
+            <p className="text-red-500 text-sm mt-1">{errors.bio.message}</p>
+          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Input
-            label="Téléphone"
-            {...register("phone")}
-            placeholder="Votre téléphone"
-            disabled={!isEditing}
-          />
-           {errors.phone && <p className="text-red-500 text-xs">{errors.phone.message}</p>}
-          <Input
-            label="Adresse"
-            {...register("address")}
-            placeholder="Votre adresse"
-            disabled={!isEditing}
-          />
+          <div className="form-group min-h-[90px]">
+            <Input
+              label="Téléphone"
+              {...register("phone")}
+              placeholder="Votre téléphone"
+              disabled={!isEditing}
+              className={errors.phone ? "border-red-500" : ""}
+            />
+            {errors.phone && (
+              <p className="text-red-500 text-sm mt-1">{errors.phone.message}</p>
+            )}
+          </div>
+          <div className="form-group min-h-[90px]">
+            <Input
+              label="Adresse"
+              {...register("address")}
+              placeholder="Votre adresse"
+              disabled={!isEditing}
+              className={errors.address ? "border-red-500" : ""}
+            />
+            {errors.address && (
+              <p className="text-red-500 text-sm mt-1">{errors.address.message}</p>
+            )}
+          </div>
         </div>
-        <Input
-          label="Ville"
-          {...register("city")}
-          placeholder="Votre ville"
-          disabled={!isEditing}
-        />
+
+        <div className="form-group min-h-[90px]">
+          <Input
+            label="Ville"
+            {...register("city")}
+            placeholder="Votre ville"
+            disabled={!isEditing}
+            className={errors.city ? "border-red-500" : ""}
+          />
+          {errors.city && (
+            <p className="text-red-500 text-sm mt-1">{errors.city.message}</p>
+          )}
+        </div>
 
         {isEditing && (
-          <div className="flex justify-end gap-4">
+          <div className="flex justify-end gap-4 pt-4">
             <Button
               type="button"
               onClick={() => setIsEditing(false)}
