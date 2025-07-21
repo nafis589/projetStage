@@ -748,7 +748,7 @@ const Services: React.FC<{ professionalId: string }> = ({ professionalId }) => {
             headers={["Service", "Prix", "Description"]}
             data={services.map((s) => ({
               name: s.name,
-              price: s.price,
+              price: `${s.price} FCFA/h`,
               description: s.description,
             }))}
             actions={actions}

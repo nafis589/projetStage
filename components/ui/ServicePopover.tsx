@@ -1,14 +1,27 @@
-import React, { useState } from "react";
+import React from "react";
 import { X } from "lucide-react";
 import { Button } from "@/app/dashboard/professional/[id]/page";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 
-// Types
+// Schema de validation
+const serviceSchema = z.object({
+  name: z
+    .string()
+    .min(2, "Le nom du service doit contenir au moins 2 caractères")
+    .max(50, "Le nom du service ne peut pas dépasser 50 caractères"),
+  price: z
+    .string()
+    .min(1, "Le prix est requis")
+    .regex(/^\d+(\.\d{1,2})?€?(\/h)?$/, "Format invalide. Exemple: 25€ ou 25€/h"),
+  description: z
+    .string()
+    .min(10, "La description doit contenir au moins 10 caractères")
+    .max(500, "La description ne peut pas dépasser 500 caractères"),
+});
 
-interface ServiceFormData {
-  name: string;
-  price: string;
-  description: string;
-}
+type ServiceFormData = z.infer<typeof serviceSchema>;
 
 const ServicePopover: React.FC<{
   isOpen: boolean;
@@ -17,42 +30,40 @@ const ServicePopover: React.FC<{
   initialData?: ServiceFormData;
   title: string;
 }> = ({ isOpen, onClose, onSave, initialData, title }) => {
-  const [formData, setFormData] = useState<ServiceFormData>(
-    initialData || { name: "", price: "", description: "" }
-  );
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<ServiceFormData>({
+    resolver: zodResolver(serviceSchema),
+    defaultValues: initialData || {
+      name: "",
+      price: "",
+      description: "",
+    },
+  });
 
   React.useEffect(() => {
     if (initialData) {
-      setFormData(initialData);
+      reset(initialData);
     }
-  }, [initialData]);
+  }, [initialData, reset]);
 
-  const handleSubmit = () => {
-    if (
-      formData.name.trim() &&
-      formData.price.trim() &&
-      formData.description.trim()
-    ) {
-      onSave(formData);
-      setFormData({ name: "", price: "", description: "" });
-    }
-  };
-
-  const handleInputChange = (field: keyof ServiceFormData, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+  const onSubmit = async (data: ServiceFormData) => {
+    onSave(data);
+    reset();
   };
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Background transparent */}
       <div
         className="absolute inset-0 bg-black/20 backdrop-blur-sm"
         onClick={onClose}
       />
 
-      {/* Popover content */}
       <div className="relative bg-white rounded-xl shadow-2xl p-6 w-full max-w-md mx-4 transform transition-all">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
@@ -64,58 +75,71 @@ const ServicePopover: React.FC<{
           </button>
         </div>
 
-        <div className="space-y-4">
-          <div>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div className="form-group min-h-[90px]">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Service
             </label>
             <input
               type="text"
-              value={formData.name}
-              onChange={(e) => handleInputChange("name", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              {...register("name")}
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                errors.name ? "border-red-500" : "border-gray-300"
+              }`}
               placeholder="Nom du service"
             />
+            {errors.name && (
+              <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>
+            )}
           </div>
 
-          <div>
+          <div className="form-group min-h-[90px]">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Prix
             </label>
             <input
               type="text"
-              value={formData.price}
-              onChange={(e) => handleInputChange("price", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="ex: 25€/h"
+              {...register("price")}
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                errors.price ? "border-red-500" : "border-gray-300"
+              }`}
+              placeholder="FCFA/h"
             />
+            {errors.price && (
+              <p className="text-red-500 text-sm mt-1">{errors.price.message}</p>
+            )}
           </div>
 
-          <div>
+          <div className="form-group min-h-[120px]">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Description
             </label>
             <textarea
-              value={formData.description}
-              onChange={(e) => handleInputChange("description", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+              {...register("description")}
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none ${
+                errors.description ? "border-red-500" : "border-gray-300"
+              }`}
               rows={3}
               placeholder="Description du service"
             />
+            {errors.description && (
+              <p className="text-red-500 text-sm mt-1">{errors.description.message}</p>
+            )}
           </div>
 
           <div className="flex gap-3 pt-4">
-            <Button onClick={onClose} variant="secondary">
+            <Button onClick={onClose} variant="secondary" type="button">
               Annuler
             </Button>
-            <button
-              onClick={handleSubmit}
-              className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors font-medium"
+            <Button
+              type="submit"
+              className="flex-1 bg-blue-600 text-white hover:bg-blue-700"
+              disabled={isSubmitting}
             >
-              Sauvegarder
-            </button>
+              {isSubmitting ? "Sauvegarde..." : "Sauvegarder"}
+            </Button>
           </div>
-        </div>
+        </form>
       </div>
     </div>
   );
