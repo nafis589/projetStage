@@ -1036,10 +1036,10 @@ const Availability = ({ professionalId }: AvailabilityProps) => {
       <div className="max-w-4xl mx-auto p-6 bg-gradient-to-br from-gray-50 to-white">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Availability Settings
+            Paramètres de disponibilité
           </h1>
           <p className="text-gray-600">
-            Set your weekly schedule and available time slots
+            Définissez votre planning hebdomadaire et vos créneaux de disponibilité
           </p>
         </div>
 
