@@ -65,8 +65,12 @@ const LoginForm = () => {
         console.log(userData);
         if (userData.role === "client") {
           router.push(`/dashboard/client/${userData.id}`);
-        } else {
+        } 
+        if (userData.role === "professional") {
           router.push(`/dashboard/professional/${userData.id}`);
+        }
+        if (userData.role === "admin") {
+          router.push("/dashboard/admin");
         }
       }
     } catch (error) {

@@ -23,7 +23,14 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL("/unauthorized", req.url));
   }
 
+  if (pathname.startsWith("/dashboard/admin") && token.role !== "admin") {
+    return NextResponse.redirect(new URL("/unauthorized", req.url));
+  }
+
   return NextResponse.next();
+
+  
+  
 }
 
 export const config = {
