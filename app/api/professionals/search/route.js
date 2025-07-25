@@ -14,6 +14,8 @@ export async function GET(request) {
   const service = searchParams.get("service");
   const latitude = parseFloat(searchParams.get("latitude"));
   const longitude = parseFloat(searchParams.get("longitude"));
+  const date = searchParams.get("date"); // format YYYY-MM-DD
+  const time = searchParams.get("time"); // format HH:mm
 
   if (!service || !latitude || !longitude) {
     return NextResponse.json(
@@ -23,40 +25,48 @@ export async function GET(request) {
   }
 
   try {
-    // For debugging, let's start with the simplest query.
-    // We will temporarily ignore availability and location filtering to diagnose the issue.
+    // On veut le nom du service trouvé et la disponibilité réelle
+    // Si date et time sont fournis, on filtre sur la disponibilité
+    let availabilityJoin = "";
+    let availabilityWhere = "";
+    let availabilityParams = [];
+    if (date && time) {
+      // On extrait le jour de la semaine (en anglais, car la table stocke MONDAY, TUESDAY, ...)
+      const dayOfWeek = new Date(date).toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase();
+      availabilityJoin = "JOIN availabilities a ON u.id = a.user_id";
+      availabilityWhere = "AND a.day_of_week = ? AND a.is_available = 1 AND a.start_time <= ? AND a.end_time > ?";
+      availabilityParams = [dayOfWeek, time, time];
+    }
 
     const sqlQuery = `
       SELECT 
         u.id,
         u.firstname,
         u.lastname,
-        p.profession,
+        s.service AS service_name,
         p.bio as description,
         p.address,
-        MIN(s.prix) as min_price,
+        s.prix as min_price,
         l.latitude,
         l.longitude
       FROM users u
       JOIN professionals p ON u.id = p.user_id
       JOIN services s ON u.id = s.professional_id
       LEFT JOIN Location l ON u.id = l.user_id
-      WHERE s.service LIKE ? AND u.role = 'professional'
-      GROUP BY u.id, u.firstname, u.lastname, p.profession, p.bio, p.address, l.latitude, l.longitude
+      ${availabilityJoin}
+      WHERE s.service LIKE ? AND u.role = 'professional' ${availabilityWhere}
+      GROUP BY u.id, u.firstname, u.lastname, s.service, p.bio, p.address, s.prix, l.latitude, l.longitude
     `;
 
-    let professionals = await query(sqlQuery, [`%${service}%`]);
+    let professionals = await query(sqlQuery, [`%${service}%`, ...availabilityParams]);
 
-    // The original location filter was here. It's temporarily removed for debugging.
-    
-    // The frontend expects an 'availability' object. We can create a mock one or adjust the frontend.
-    // For now, let's add a simple one to avoid breaking the UI.
+    // On peut ajouter ici la logique pour calculer le temps estimé si besoin
     const results = professionals.map(p => ({
         ...p,
         avg_rating: 0, // Not in schema
         reviews_count: 0, // Not in schema
         availability: {
-            status: "available", // This is not from the DB, just a placeholder
+            status: "available", // On pourrait raffiner selon la logique métier
             estimated_time: 30 // Placeholder
         }
     }));

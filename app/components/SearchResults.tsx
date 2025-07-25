@@ -9,7 +9,7 @@ interface Professional {
   id: number;
   firstname: string;
   lastname: string;
-  profession: string;
+  service_name: string; // <- nouveau champ pour le service trouvé
   description: string;
   address: string;
   min_price: number;
@@ -19,6 +19,8 @@ interface Professional {
     status: string;
     estimated_time: number;
   };
+  latitude?: number;
+  longitude?: number;
 }
 
 interface SearchResultsProps {
@@ -84,7 +86,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
                 </div>
                 
                 <p className="text-gray-600 text-sm mt-1">
-                  {professional.profession}
+                  {professional.service_name}
                 </p>
                 
                 <div className="flex items-center mt-2 text-sm text-blue-600">
@@ -99,7 +101,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
 
               <div className="text-right">
                 <div className="font-bold text-xl">
-                  {professional.min_price}€
+                  {professional.min_price}FCFA
                 </div>
                 <div className="text-xs text-gray-500 mb-2">
                   À partir de
@@ -134,7 +136,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
                           },
                           body: JSON.stringify({
                             professional_id: professional.id,
-                            service: professional.profession,
+                            service: professional.service_name, // <- utiliser le nom du service
                             price: professional.min_price,
                             location: JSON.stringify(userLocation),
                           }),

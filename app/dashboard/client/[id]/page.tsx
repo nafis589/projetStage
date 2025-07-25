@@ -11,7 +11,7 @@ interface Professional {
   id: number;
   firstname: string;
   lastname: string;
-  profession: string;
+  service_name: string;
   description: string;
   address: string;
   min_price: number;

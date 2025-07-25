@@ -8,7 +8,7 @@ interface Professional {
   id: number;
   firstname: string;
   lastname: string;
-  profession: string;
+  service_name: string;
   description: string;
   address: string;
   min_price: number;
@@ -54,7 +54,7 @@ const ProfessionalDetailsModal: React.FC<ProfessionalDetailsModalProps> = ({
         },
         body: JSON.stringify({
           professional_id: professional.id,
-          service: professional.profession,
+          service: professional.service_name,
           price: professional.min_price,
           location: JSON.stringify(userLocation),
         }),
@@ -112,7 +112,7 @@ const ProfessionalDetailsModal: React.FC<ProfessionalDetailsModalProps> = ({
           <h2 className="text-xl font-bold text-center">
             {professional.firstname} {professional.lastname}
           </h2>
-          <p className="text-gray-500 text-sm mt-1">{professional.profession}</p>
+          <p className="text-gray-500 text-sm mt-1">{professional.service_name}</p>
           
           {/* Status badge */}
           <div className="mt-2">
@@ -140,7 +140,7 @@ const ProfessionalDetailsModal: React.FC<ProfessionalDetailsModalProps> = ({
               <div className="text-xs text-gray-500">Avg Rating</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-black">{professional.min_price}€</div>
+              <div className="text-2xl font-bold text-black">{professional.min_price} F</div>
               <div className="text-xs text-gray-500">Min Price</div>
             </div>
           </div>
@@ -183,7 +183,7 @@ const ProfessionalDetailsModal: React.FC<ProfessionalDetailsModalProps> = ({
             <div className="text-sm text-gray-500 mb-2">Skillset</div>
             <div className="flex flex-wrap gap-2">
               <span className="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-md">
-                {professional.profession}
+                {professional.service_name}
               </span>
               <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-md">
                 Professional
