@@ -5,7 +5,6 @@ import {
   Search,
   Filter,
   MoreHorizontal,
-  Edit3,
   Trash2,
   UserCheck,
   UserX,
@@ -220,7 +219,6 @@ const AdminUser: React.FC = () => {
     }
   };
 
-  
   // Fonction pour supprimer un utilisateur
   const deleteUser = async (userId: string) => {
     try {
@@ -288,7 +286,7 @@ const AdminUser: React.FC = () => {
       <div className="mb-6">
         <div className="flex items-center space-x-3 mb-2">
           <div className="w-8 h-8 rounded-lg flex items-center justify-center">
-            <Users className="w-5 h-5 text-black" />
+            <Users className="w-7 h-7 text-black" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">
             Gestion des Utilisateurs
@@ -426,9 +424,13 @@ const AdminUser: React.FC = () => {
                             user.role
                           )}`}
                         >
-                          {user.role === "professionnel" ? "Professionnel" : 
-                           user.role === "client" ? "Client" : 
-                           user.role === "admin" ? "Admin" : user.role}
+                          {user.role === "professionnel"
+                            ? "Professionnel"
+                            : user.role === "client"
+                            ? "Client"
+                            : user.role === "admin"
+                            ? "Admin"
+                            : user.role}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -471,14 +473,6 @@ const AdminUser: React.FC = () => {
                             ) : (
                               <UserX className="w-4 h-4" />
                             )}
-                          </button>
-
-                          {/* Modifier */}
-                          <button
-                            className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
-                            title="Modifier"
-                          >
-                            <Edit3 className="w-4 h-4" />
                           </button>
 
                           {/* Supprimer */}
