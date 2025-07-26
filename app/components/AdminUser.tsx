@@ -141,7 +141,7 @@ const AdminUser: React.FC = () => {
   }>({ isOpen: false, user: null });
 
   // Fonction pour récupérer les utilisateurs
-  const fetchUsers = async () => {
+  const fetchUsers = React.useCallback(async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams({
@@ -169,12 +169,12 @@ const AdminUser: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, searchTerm, roleFilter]);
 
   // Charger les utilisateurs au montage du composant et lors des changements de filtres
   useEffect(() => {
     fetchUsers();
-  }, [currentPage, searchTerm, roleFilter]);
+  }, [fetchUsers]);
 
   // Fonction pour changer le statut d'un utilisateur
   const toggleUserStatus = async (userId: string, currentStatus: string) => {

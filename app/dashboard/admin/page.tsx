@@ -102,7 +102,7 @@ const AdminDashboard: React.FC = () => {
   } | null>(null);
 
   // Fonction pour récupérer les données du dashboard
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = React.useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -123,7 +123,7 @@ const AdminDashboard: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedPeriod]);
 
   // Fonction pour récupérer le profil de l'admin
   const fetchAdminProfile = async () => {
@@ -163,7 +163,7 @@ const AdminDashboard: React.FC = () => {
     if (activeTab === "dashboard") {
       fetchDashboardData();
     }
-  }, [selectedPeriod, activeTab]);
+  }, [fetchDashboardData, activeTab]);
 
   // Charger le profil de l'admin au montage du composant
   useEffect(() => {
