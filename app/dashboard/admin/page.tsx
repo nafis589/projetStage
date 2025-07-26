@@ -13,7 +13,9 @@ import {
   TrendingDown,
   Users,
   Loader2,
+  LogOut,
 } from "lucide-react";
+import { signOut } from "next-auth/react";
 import {
   LineChart,
   Line,
@@ -188,11 +190,11 @@ const AdminDashboard: React.FC = () => {
   return (
     <div className="h-screen bg-gray-50 flex overflow-hidden">
       {/* Sidebar Fixed */}
-      <div className="w-64 bg-white shadow-lg border-r border-gray-200 fixed h-full z-30">
+      <div className="w-64 bg-white shadow-lg border-r border-gray-200 fixed h-full z-30 flex flex-col min-h-0">
         {/* Logo */}
-        <div className="p-6 border-b border-gray-200">
+        <div className="p-4">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-lg flex items-center justify-center">
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center">
               <Home className="text-black" size={48} />
             </div>
             <div>
@@ -202,33 +204,47 @@ const AdminDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Navigation */}
-        <nav className="mt-6 h-full overflow-y-auto pb-20">
-          <div className="px-4 space-y-2">
+        {/* Navigation Container */}
+        <div className="flex flex-col flex-1 min-h-0 pt-6">
+          {/* Navigation Menu */}
+          <nav className="flex-1 min-h-0 overflow-y-auto">
+            <div className="px-4 space-y-2">
+              <button
+                onClick={() => setActiveTab("dashboard")}
+                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
+                  activeTab === "dashboard"
+                    ? "text-white bg-black"
+                    : "text-gray-700 hover:bg-gray-100"
+                }`}
+              >
+                <LayoutDashboard size={20} />
+                <span className="font-medium">Tableau de bord</span>
+              </button>
+              <button
+                onClick={() => setActiveTab("users")}
+                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
+                  activeTab === "users"
+                    ? "text-white bg-black"
+                    : "text-gray-700 hover:bg-gray-100"
+                }`}
+              >
+                <Users size={20} />
+                <span className="font-medium">Utilisateurs</span>
+              </button>
+            </div>
+          </nav>
+
+          {/* Logout Button - Fixed at bottom */}
+          <div className="p-4 border-t border-gray-200 mt-auto">
             <button
-              onClick={() => setActiveTab("dashboard")}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
-                activeTab === "dashboard"
-                  ? "text-white bg-black"
-                  : "text-gray-700 hover:bg-gray-100"
-              }`}
+              onClick={() => signOut({ callbackUrl: "/login" })}
+              className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors text-red-600 hover:bg-red-50 hover:text-red-700"
             >
-              <LayoutDashboard size={20} />
-              <span className="font-medium">Tableau de bord</span>
-            </button>
-            <button
-              onClick={() => setActiveTab("users")}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
-                activeTab === "users"
-                  ? "text-white bg-black"
-                  : "text-gray-700 hover:bg-gray-100"
-              }`}
-            >
-              <Users size={20} />
-              <span className="font-medium">Utilisateurs</span>
+              <LogOut size={20} />
+              <span className="font-medium">Se déconnecter</span>
             </button>
           </div>
-        </nav>
+        </div>
       </div>
 
       {/* Main Content */}
@@ -239,7 +255,7 @@ const AdminDashboard: React.FC = () => {
             <div className="flex items-center space-x-4">
               <h2 className="text-2xl font-bold text-gray-900">
                 {adminProfile
-                  ? `Bon ${getDayOfWeek()}, ${adminProfile.lastName}`
+                  ? `Bon ${getDayOfWeek()}, ${adminProfile.firstName}`
                   : "Dashboard Admin"}
               </h2>
             </div>
