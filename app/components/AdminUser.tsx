@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Search,
   Filter,
@@ -14,6 +14,7 @@ import {
   Users,
   AlertTriangle,
   X,
+  Loader2,
 } from "lucide-react";
 
 // Types pour les utilisateurs
@@ -28,117 +29,24 @@ interface User {
   avatar?: string;
 }
 
-// Données d'exemple
-const mockUsers: User[] = [
-  {
-    id: "1",
-    firstName: "Marie",
-    lastName: "Dubois",
-    email: "marie.dubois@email.com",
-    role: "client",
-    registrationDate: "2024-01-15",
-    status: "actif",
-  },
-  {
-    id: "2",
-    firstName: "Jean",
-    lastName: "Dupont",
-    email: "jean.dupont@email.com",
-    role: "professionnel",
-    registrationDate: "2024-01-10",
-    status: "actif",
-  },
-  {
-    id: "3",
-    firstName: "Sophie",
-    lastName: "Martin",
-    email: "sophie.martin@email.com",
-    role: "professionnel",
-    registrationDate: "2024-01-08",
-    status: "inactif",
-  },
-  {
-    id: "4",
-    firstName: "Pierre",
-    lastName: "Leroy",
-    email: "pierre.leroy@email.com",
-    role: "admin",
-    registrationDate: "2024-01-05",
-    status: "actif",
-  },
-  {
-    id: "5",
-    firstName: "Claire",
-    lastName: "Bernard",
-    email: "claire.bernard@email.com",
-    role: "client",
-    registrationDate: "2024-01-12",
-    status: "actif",
-  },
-  {
-    id: "6",
-    firstName: "Marc",
-    lastName: "Rousseau",
-    email: "marc.rousseau@email.com",
-    role: "professionnel",
-    registrationDate: "2024-01-03",
-    status: "inactif",
-  },
-  {
-    id: "7",
-    firstName: "Anne",
-    lastName: "Moreau",
-    email: "anne.moreau@email.com",
-    role: "client",
-    registrationDate: "2024-01-20",
-    status: "actif",
-  },
-  {
-    id: "8",
-    firstName: "Thomas",
-    lastName: "Petit",
-    email: "thomas.petit@email.com",
-    role: "professionnel",
-    registrationDate: "2024-01-18",
-    status: "actif",
-  },
-  {
-    id: "9",
-    firstName: "Isabelle",
-    lastName: "Garcia",
-    email: "isabelle.garcia@email.com",
-    role: "client",
-    registrationDate: "2024-01-14",
-    status: "inactif",
-  },
-  {
-    id: "10",
-    firstName: "Laurent",
-    lastName: "Roux",
-    email: "laurent.roux@email.com",
-    role: "professionnel",
-    registrationDate: "2024-01-11",
-    status: "actif",
-  },
-  {
-    id: "11",
-    firstName: "Nathalie",
-    lastName: "Blanc",
-    email: "nathalie.blanc@email.com",
-    role: "client",
-    registrationDate: "2024-01-09",
-    status: "actif",
-  },
-  {
-    id: "12",
-    firstName: "David",
-    lastName: "Faure",
-    email: "david.faure@email.com",
-    role: "professionnel",
-    registrationDate: "2024-01-07",
-    status: "actif",
-  },
-];
+interface ApiResponse {
+  success: boolean;
+  data: {
+    users: User[];
+    pagination: {
+      currentPage: number;
+      totalPages: number;
+      totalUsers: number;
+      limit: number;
+    };
+    stats: {
+      total: number;
+      active: number;
+      inactive: number;
+    };
+  };
+  error?: string;
+}
 
 // Modal de confirmation de suppression
 interface DeleteModalProps {
@@ -146,6 +54,7 @@ interface DeleteModalProps {
   user: User | null;
   onClose: () => void;
   onConfirm: () => void;
+  isLoading: boolean;
 }
 
 const DeleteModal: React.FC<DeleteModalProps> = ({
@@ -153,11 +62,12 @@ const DeleteModal: React.FC<DeleteModalProps> = ({
   user,
   onClose,
   onConfirm,
+  isLoading,
 }) => {
   if (!isOpen || !user) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-transparent  flex items-center justify-center z-50">
       <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-3">
@@ -171,6 +81,7 @@ const DeleteModal: React.FC<DeleteModalProps> = ({
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600"
+            disabled={isLoading}
           >
             <X className="w-5 h-5" />
           </button>
@@ -186,14 +97,20 @@ const DeleteModal: React.FC<DeleteModalProps> = ({
           <button
             onClick={onClose}
             className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+            disabled={isLoading}
           >
             Annuler
           </button>
           <button
             onClick={onConfirm}
-            className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center justify-center"
+            disabled={isLoading}
           >
-            Supprimer
+            {isLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              "Supprimer"
+            )}
           </button>
         </div>
       </div>
@@ -202,64 +119,135 @@ const DeleteModal: React.FC<DeleteModalProps> = ({
 };
 
 const AdminUser: React.FC = () => {
-  const [users, setUsers] = useState<User[]>(mockUsers);
+  const [users, setUsers] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalUsers: 0,
+    limit: 10,
+  });
+  const [stats, setStats] = useState({
+    total: 0,
+    active: 0,
+    inactive: 0,
+  });
   const [deleteModal, setDeleteModal] = useState<{
     isOpen: boolean;
     user: User | null;
   }>({ isOpen: false, user: null });
 
-  const itemsPerPage = 10;
+  // Fonction pour récupérer les utilisateurs
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: "10",
+        search: searchTerm,
+        role: roleFilter,
+      });
 
-  // Filtrage et recherche
-  const filteredUsers = useMemo(() => {
-    return users.filter((user) => {
-      const matchesSearch =
-        user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchTerm.toLowerCase());
+      const response = await fetch(`/api/AdminUser?${params}`);
+      const data: ApiResponse = await response.json();
 
-      const matchesRole = roleFilter === "all" || user.role === roleFilter;
-
-      return matchesSearch && matchesRole;
-    });
-  }, [users, searchTerm, roleFilter]);
-
-  // Pagination
-  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedUsers = filteredUsers.slice(
-    startIndex,
-    startIndex + itemsPerPage
-  );
-
-  // Fonctions de gestion
-  const toggleUserStatus = (userId: string) => {
-    setUsers((prevUsers) =>
-      prevUsers.map((user) =>
-        user.id === userId
-          ? {
-              ...user,
-              status: user.status === "actif" ? "inactif" : "actif",
-            }
-          : user
-      )
-    );
+      if (data.success) {
+        setUsers(data.data.users);
+        setPagination(data.data.pagination);
+        setStats(data.data.stats);
+      } else {
+        console.error(
+          "Erreur lors du chargement des utilisateurs:",
+          data.error
+        );
+      }
+    } catch (error) {
+      console.error("Erreur lors du chargement des utilisateurs:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const changeUserRole = (userId: string, newRole: User["role"]) => {
-    setUsers((prevUsers) =>
-      prevUsers.map((user) =>
-        user.id === userId ? { ...user, role: newRole } : user
-      )
-    );
+  // Charger les utilisateurs au montage du composant et lors des changements de filtres
+  useEffect(() => {
+    fetchUsers();
+  }, [currentPage, searchTerm, roleFilter]);
+
+  // Fonction pour changer le statut d'un utilisateur
+  const toggleUserStatus = async (userId: string, currentStatus: string) => {
+    try {
+      setActionLoading(userId);
+      const newStatus = currentStatus === "actif" ? "inactif" : "actif";
+
+      const response = await fetch("/api/AdminUser", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId,
+          action: "toggleStatus",
+          newStatus,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Mettre à jour l'état local
+        setUsers((prevUsers) =>
+          prevUsers.map((user) =>
+            user.id === userId
+              ? { ...user, status: newStatus as "actif" | "inactif" }
+              : user
+          )
+        );
+        // Recharger les statistiques
+        fetchUsers();
+      } else {
+        console.error("Erreur lors du changement de statut:", data.error);
+        alert("Erreur lors du changement de statut de l'utilisateur");
+      }
+    } catch (error) {
+      console.error("Erreur lors du changement de statut:", error);
+      alert("Erreur lors du changement de statut de l'utilisateur");
+    } finally {
+      setActionLoading(null);
+    }
   };
 
-  const deleteUser = (userId: string) => {
-    setUsers((prevUsers) => prevUsers.filter((user) => user.id !== userId));
-    setDeleteModal({ isOpen: false, user: null });
+  
+  // Fonction pour supprimer un utilisateur
+  const deleteUser = async (userId: string) => {
+    try {
+      setActionLoading(userId);
+
+      const response = await fetch(`/api/AdminUser?userId=${userId}`, {
+        method: "DELETE",
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Supprimer de l'état local
+        setUsers((prevUsers) => prevUsers.filter((user) => user.id !== userId));
+        setDeleteModal({ isOpen: false, user: null });
+        // Recharger les données pour mettre à jour les statistiques et la pagination
+        fetchUsers();
+      } else {
+        console.error("Erreur lors de la suppression:", data.error);
+        alert("Erreur lors de la suppression de l'utilisateur");
+      }
+    } catch (error) {
+      console.error("Erreur lors de la suppression:", error);
+      alert("Erreur lors de la suppression de l'utilisateur");
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   const getRoleColor = (role: string) => {
@@ -289,11 +277,19 @@ const AdminUser: React.FC = () => {
     });
   };
 
+  // Réinitialiser la page lors du changement de filtres
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, roleFilter]);
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center space-x-3 mb-2">
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center">
+            <Users className="w-5 h-5 text-black" />
+          </div>
           <h1 className="text-2xl font-bold text-gray-900">
             Gestion des Utilisateurs
           </h1>
@@ -338,21 +334,15 @@ const AdminUser: React.FC = () => {
           {/* Statistiques */}
           <div className="flex items-center space-x-6 text-sm text-gray-600">
             <div>
-              <span className="font-medium text-gray-900">
-                {filteredUsers.length}
-              </span>{" "}
+              <span className="font-medium text-gray-900">{stats.total}</span>{" "}
               utilisateur(s)
             </div>
             <div>
-              <span className="font-medium text-green-600">
-                {filteredUsers.filter((u) => u.status === "actif").length}
-              </span>{" "}
+              <span className="font-medium text-green-600">{stats.active}</span>{" "}
               actif(s)
             </div>
             <div>
-              <span className="font-medium text-red-600">
-                {filteredUsers.filter((u) => u.status === "inactif").length}
-              </span>{" "}
+              <span className="font-medium text-red-600">{stats.inactive}</span>{" "}
               inactif(s)
             </div>
           </div>
@@ -361,8 +351,15 @@ const AdminUser: React.FC = () => {
 
       {/* Table des utilisateurs */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        {filteredUsers.length === 0 ? (
+        {loading ? (
           <div className="p-12 text-center">
+            <Loader2 className="w-8 h-8 text-gray-400 mx-auto mb-4 animate-spin" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              Chargement des utilisateurs...
+            </h3>
+          </div>
+        ) : users.length === 0 ? (
+          <div className="py-12 text-center">
             <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">
               Aucun utilisateur trouvé
@@ -398,7 +395,7 @@ const AdminUser: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {paginatedUsers.map((user) => (
+                  {users.map((user) => (
                     <tr
                       key={user.id}
                       className={`hover:bg-gray-50 transition-colors ${
@@ -424,22 +421,15 @@ const AdminUser: React.FC = () => {
                         {user.email}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <select
-                          value={user.role}
-                          onChange={(e) =>
-                            changeUserRole(
-                              user.id,
-                              e.target.value as User["role"]
-                            )
-                          }
-                          className={`text-xs font-medium px-2.5 py-1 rounded-full border-0 focus:outline-none focus:ring-2 focus:ring-black ${getRoleColor(
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRoleColor(
                             user.role
                           )}`}
                         >
-                          <option value="client">Client</option>
-                          <option value="professionnel">Professionnel</option>
-                          <option value="admin">Admin</option>
-                        </select>
+                          {user.role === "professionnel" ? "Professionnel" : 
+                           user.role === "client" ? "Client" : 
+                           user.role === "admin" ? "Admin" : user.role}
+                        </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {formatDate(user.registrationDate)}
@@ -457,17 +447,26 @@ const AdminUser: React.FC = () => {
                         <div className="flex items-center space-x-2">
                           {/* Toggle Actif/Inactif */}
                           <button
-                            onClick={() => toggleUserStatus(user.id)}
+                            onClick={() =>
+                              toggleUserStatus(user.id, user.status)
+                            }
+                            disabled={actionLoading === user.id}
                             className={`p-2 rounded-lg transition-colors ${
                               user.status === "actif"
                                 ? "text-green-600 hover:bg-green-100"
                                 : "text-red-600 hover:bg-red-100"
+                            } ${
+                              actionLoading === user.id
+                                ? "opacity-50 cursor-not-allowed"
+                                : ""
                             }`}
                             title={
                               user.status === "actif" ? "Désactiver" : "Activer"
                             }
                           >
-                            {user.status === "actif" ? (
+                            {actionLoading === user.id ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : user.status === "actif" ? (
                               <UserCheck className="w-4 h-4" />
                             ) : (
                               <UserX className="w-4 h-4" />
@@ -487,7 +486,12 @@ const AdminUser: React.FC = () => {
                             onClick={() =>
                               setDeleteModal({ isOpen: true, user })
                             }
-                            className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+                            disabled={actionLoading === user.id}
+                            className={`p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors ${
+                              actionLoading === user.id
+                                ? "opacity-50 cursor-not-allowed"
+                                : ""
+                            }`}
                             title="Supprimer"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -506,20 +510,23 @@ const AdminUser: React.FC = () => {
             </div>
 
             {/* Pagination */}
-            {totalPages > 1 && (
+            {pagination.totalPages > 1 && (
               <div className="px-6 py-4 border-t border-gray-200">
                 <div className="flex items-center justify-between">
                   <div className="text-sm text-gray-700">
                     Affichage de{" "}
-                    <span className="font-medium">{startIndex + 1}</span> à{" "}
+                    <span className="font-medium">
+                      {(pagination.currentPage - 1) * pagination.limit + 1}
+                    </span>{" "}
+                    à{" "}
                     <span className="font-medium">
                       {Math.min(
-                        startIndex + itemsPerPage,
-                        filteredUsers.length
+                        pagination.currentPage * pagination.limit,
+                        pagination.totalUsers
                       )}
                     </span>{" "}
                     sur{" "}
-                    <span className="font-medium">{filteredUsers.length}</span>{" "}
+                    <span className="font-medium">{pagination.totalUsers}</span>{" "}
                     résultats
                   </div>
                   <div className="flex items-center space-x-2">
@@ -527,19 +534,23 @@ const AdminUser: React.FC = () => {
                       onClick={() =>
                         setCurrentPage((prev) => Math.max(prev - 1, 1))
                       }
-                      disabled={currentPage === 1}
+                      disabled={currentPage === 1 || loading}
                       className="p-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
                     >
                       <ChevronLeft className="w-4 h-4" />
                     </button>
                     <span className="px-4 py-2 text-sm font-medium">
-                      Page {currentPage} sur {totalPages}
+                      Page {pagination.currentPage} sur {pagination.totalPages}
                     </span>
                     <button
                       onClick={() =>
-                        setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                        setCurrentPage((prev) =>
+                          Math.min(prev + 1, pagination.totalPages)
+                        )
                       }
-                      disabled={currentPage === totalPages}
+                      disabled={
+                        currentPage === pagination.totalPages || loading
+                      }
                       className="p-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
                     >
                       <ChevronRight className="w-4 h-4" />
@@ -558,6 +569,7 @@ const AdminUser: React.FC = () => {
         user={deleteModal.user}
         onClose={() => setDeleteModal({ isOpen: false, user: null })}
         onConfirm={() => deleteModal.user && deleteUser(deleteModal.user.id)}
+        isLoading={actionLoading !== null}
       />
     </div>
   );
