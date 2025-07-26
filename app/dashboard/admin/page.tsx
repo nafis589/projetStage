@@ -1,362 +1,510 @@
 "use client";
-import React, { useState } from 'react';
-import { 
-  LayoutDashboard, 
-  Calendar, 
-  Megaphone, 
-  FileText, 
-  MapPin, 
-  DollarSign, 
-  Settings, 
-  Users, 
-  UserPlus, 
-  Bell,
+import React, { useState } from "react";
+import {
+  LayoutDashboard,
+  Calendar,
+  UserCheck,
+  DollarSign,
   User,
   ChevronDown,
   Search,
-  CreditCard,
-  ToggleLeft
-} from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, ResponsiveContainer } from 'recharts';
+  Home,
+  Star,
+  TrendingUp,
+  Eye,
+  Edit,
+  MoreHorizontal,
+  Users,
+} from "lucide-react";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts";
+import AdminUser from "../../components/AdminUser";
 
-// Types
+// Types pour l'application de services à domicile
+interface ServiceBooking {
+  id: string;
+  clientName: string;
+  serviceName: string;
+  professionalName: string;
+  date: string;
+  time: string;
+  status: "En attente" | "Confirmé" | "En cours" | "Terminé" | "Annulé";
+  price: number;
+  address: string;
+  rating?: number;
+}
+
 interface ChartDataPoint {
   name: string;
   value: number;
+  bookings?: number;
+  revenue?: number;
 }
 
-interface BookingData {
-  id: string;
-  startTime: string;
-  screens: string;
-  impression: string;
-  view: string;
-  interval: string;
-  cost: string;
-  status: 'Active' | 'Inactive' | 'Pending';
-}
+const AdminDashboard: React.FC = () => {
+  const [selectedPeriod, setSelectedPeriod] = useState("7d");
+  const [activeTab, setActiveTab] = useState("dashboard");
 
-type TabType = 'activity' | 'campaign' | 'bookings';
-
-const Dashboard: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<TabType>('campaign');
-  
-  // Chart data for the line graph
-  const chartData: ChartDataPoint[] = [
-    { name: '3am', value: 35 },
-    { name: '5am', value: 28 },
-    { name: '6am', value: 15 },
-    { name: '7am', value: 12 },
-    { name: '8am', value: 8 },
-    { name: '9am', value: 18 },
-    { name: '10am', value: 25 },
-    { name: '11am', value: 35 },
-    { name: '3pm', value: 42 },
-    { name: '1pm', value: 38 },
-    { name: '2pm', value: 45 },
-    { name: '3pm', value: 52 }
+  // Données pour les graphiques
+  const revenueData: ChartDataPoint[] = [
+    { name: "Lun", value: 2400, bookings: 12 },
+    { name: "Mar", value: 1398, bookings: 8 },
+    { name: "Mer", value: 9800, bookings: 24 },
+    { name: "Jeu", value: 3908, bookings: 18 },
+    { name: "Ven", value: 4800, bookings: 22 },
+    { name: "Sam", value: 3800, bookings: 16 },
+    { name: "Dim", value: 4300, bookings: 19 },
   ];
 
-  const bookingsData: BookingData[] = [
-    { id: '#155055', startTime: '20 Jan 12:30pm', screens: '02', impression: '03', view: '120', interval: '05', cost: '₹2000/Sec', status: 'Active' },
-    { id: '#155055', startTime: '20 Jan 12:30pm', screens: '02', impression: '03', view: '120', interval: '05', cost: '₹2000/Sec', status: 'Active' },
-    { id: '#155055', startTime: '20 Jan 12:30pm', screens: '02', impression: '03', view: '120', interval: '05', cost: '₹2000/Sec', status: 'Active' }
+  const serviceDistribution = [
+    { name: "Ménage", value: 35, color: "#10B981" },
+    { name: "Plomberie", value: 25, color: "#F59E0B" },
+    { name: "Électricité", value: 20, color: "#EF4444" },
+    { name: "Jardinage", value: 15, color: "#9CA3AF" },
+    { name: "Autres", value: 5, color: "#D1D5DB" },
   ];
+
+  // Données des réservations récentes
+  const recentBookings: ServiceBooking[] = [
+    {
+      id: "#SRV001",
+      clientName: "Marie Dubois",
+      serviceName: "Ménage complet",
+      professionalName: "Sophie Martin",
+      date: "2024-01-15",
+      time: "09:00",
+      status: "Confirmé",
+      price: 85,
+      address: "123 Rue de la Paix, Paris",
+      rating: 4.8,
+    },
+    {
+      id: "#SRV002",
+      clientName: "Jean Dupont",
+      serviceName: "Réparation plomberie",
+      professionalName: "Pierre Leroy",
+      date: "2024-01-15",
+      time: "14:30",
+      status: "En cours",
+      price: 120,
+      address: "456 Avenue des Champs, Lyon",
+    },
+    {
+      id: "#SRV003",
+      clientName: "Claire Bernard",
+      serviceName: "Installation électrique",
+      professionalName: "Marc Rousseau",
+      date: "2024-01-16",
+      time: "10:00",
+      status: "En attente",
+      price: 200,
+      address: "789 Boulevard Saint-Germain, Marseille",
+    },
+  ];
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "Confirmé":
+        return "bg-green-100 text-green-800";
+      case "En cours":
+        return "bg-blue-100 text-blue-800";
+      case "En attente":
+        return "bg-yellow-100 text-yellow-800";
+      case "Terminé":
+        return "bg-gray-100 text-gray-800";
+      case "Annulé":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar */}
-      <div className="w-64 bg-white shadow-sm border-r border-gray-200">
+    <div className="h-screen bg-gray-50 flex overflow-hidden">
+      {/* Sidebar Fixed */}
+      <div className="w-64 bg-white shadow-lg border-r border-gray-200 fixed h-full z-30">
         {/* Logo */}
         <div className="p-6 border-b border-gray-200">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-black rounded flex items-center justify-center">
-              <span className="text-white text-sm font-bold">S</span>
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center">
+              <Home className="text-black" size={48} />
             </div>
-            <span className="text-xl font-semibold">SignGaze</span>
+            <div>
+              <h1 className="text-xl font-bold text-gray-900">Geservice</h1>
+              <p className="text-xs text-gray-500">Admin Dashboard</p>
+            </div>
           </div>
         </div>
 
         {/* Navigation */}
-        <nav className="mt-6">
-          <div className="px-4 space-y-1">
-            <div className="flex items-center space-x-3 px-3 py-2 text-blue-600 bg-blue-50 rounded-lg">
+        <nav className="mt-6 h-full overflow-y-auto pb-20">
+          <div className="px-4 space-y-2">
+            <button
+              onClick={() => setActiveTab("dashboard")}
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
+                activeTab === "dashboard"
+                  ? "text-white bg-black"
+                  : "text-gray-700 hover:bg-gray-100"
+              }`}
+            >
               <LayoutDashboard size={20} />
-              <span className="font-medium">Dashboard</span>
-            </div>
-            <div className="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg cursor-pointer">
-              <Calendar size={20} />
-              <span>My Booking</span>
-            </div>
-            <div className="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg cursor-pointer">
-              <Megaphone size={20} />
-              <span>My Campaign</span>
-            </div>
-            <div className="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg cursor-pointer">
-              <FileText size={20} />
-              <span>My Ads</span>
-            </div>
-            <div className="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg cursor-pointer">
-              <MapPin size={20} />
-              <span>My Listings</span>
-            </div>
-            <div className="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg cursor-pointer">
-              <DollarSign size={20} />
-              <span>Finances</span>
-            </div>
-          </div>
-
-          <div className="mt-8 px-4">
-            <h3 className="text-sm font-medium text-gray-900 mb-2">Help</h3>
-            <div className="space-y-1">
-              <div className="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg cursor-pointer">
-                <Settings size={20} />
-                <span>Setting</span>
-              </div>
-              <div className="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg cursor-pointer">
-                <Users size={20} />
-                <span>Support</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Refer a Friend */}
-          <div className="mt-8 mx-4 p-4 bg-gray-50 rounded-lg">
-            <div className="flex items-start space-x-3">
-              <UserPlus size={20} className="text-gray-600 mt-1" />
-              <div>
-                <h4 className="text-sm font-medium text-gray-900">Refer a friend!</h4>
-                <p className="text-xs text-gray-500 mt-1">And get awesome rewards</p>
-              </div>
-            </div>
-            <div className="mt-3">
-              <svg width="60" height="40" viewBox="0 0 60 40" className="text-gray-400">
-                <path d="M10 30 Q15 25 20 30 T30 30 T40 30 T50 30" stroke="currentColor" strokeWidth="2" fill="none"/>
-                <circle cx="15" cy="15" r="8" stroke="currentColor" strokeWidth="2" fill="none"/>
-                <circle cx="35" cy="15" r="8" stroke="currentColor" strokeWidth="2" fill="none"/>
-              </svg>
-            </div>
+              <span className="font-medium">Tableau de bord</span>
+            </button>
+            <button
+              onClick={() => setActiveTab("users")}
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
+                activeTab === "users"
+                  ? "text-white bg-black"
+                  : "text-gray-700 hover:bg-gray-100"
+              }`}
+            >
+              <Users size={20} />
+              <span className="font-medium">Utilisateurs</span>
+            </button>
           </div>
         </nav>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1">
-        {/* Header */}
-        <header className="bg-white border-b border-gray-200 px-6 py-4">
+      <div className="flex-1 ml-64">
+        {/* Header Fixed */}
+        <header
+          className="bg-white border-b border-gray-200 px-6 py-4 fixed w-full z-20"
+          style={{ left: "256px", width: "calc(100% - 256px)" }}
+        >
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <span className="text-gray-500">Advertiser</span>
-              <span className="text-gray-500">Screen Owner</span>
+              <h2 className="text-2xl font-bold text-gray-900">
+                Dashboard Admin
+              </h2>
             </div>
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-1">
-                
-                <span className="text-sm">EN</span>
-                <ChevronDown size={16} />
+              <div className="relative">
+                <Search
+                  size={16}
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                />
+                <input
+                  type="text"
+                  placeholder="Rechercher..."
+                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent w-48"
+                />
               </div>
-              <Bell size={20} className="text-gray-600" />
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                  <User size={16} className="text-blue-600" />
+
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-black rounded-full flex items-center justify-center">
+                  <User size={20} className="text-white" />
                 </div>
-                <span className="text-sm font-medium">Sanket</span>
-                <ChevronDown size={16} />
+                <div>
+                  <div className="text-sm font-medium text-gray-900">Admin</div>
+                  <div className="text-xs text-gray-500">Administrateur</div>
+                </div>
+                <ChevronDown size={16} className="text-gray-400" />
               </div>
             </div>
           </div>
         </header>
 
-        {/* Dashboard Content */}
-        <main className="p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left Column - Stats and Chart */}
-            <div className="lg:col-span-2 space-y-6">
+        {/* Dashboard Content - Scrollable */}
+        <main className="pt-20 p-4 h-full overflow-y-auto">
+          {activeTab === "dashboard" && (
+            <>
               {/* Stats Cards */}
-              <div className="grid grid-cols-3 gap-4">
-                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-2xl font-bold">₹1000.0</p>
-                      <p className="text-sm text-gray-500">Total Revenue</p>
+                      <p className="text-2xl font-bold text-gray-900">1,247</p>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Total Réservations
+                      </p>
+                      <div className="flex items-center mt-2 text-green-600">
+                        <TrendingUp size={14} className="mr-1" />
+                        <span className="text-sm font-medium">+12.5%</span>
+                      </div>
                     </div>
-                    <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                      <DollarSign className="text-green-600" size={20} />
+                    <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center">
+                      <Calendar className="text-gray-600" size={20} />
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-2xl font-bold">365</p>
-                      <p className="text-sm text-gray-500">Active Campaign</p>
+                      <p className="text-2xl font-bold text-gray-900">89</p>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Professionnels Actifs
+                      </p>
+                      <div className="flex items-center mt-2 text-green-600">
+                        <TrendingUp size={14} className="mr-1" />
+                        <span className="text-sm font-medium">+5.2%</span>
+                      </div>
                     </div>
-                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <Megaphone className="text-blue-600" size={20} />
+                    <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center">
+                      <UserCheck className="text-gray-600" size={20} />
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-2xl font-bold">48</p>
-                      <p className="text-sm text-gray-500">Active Screens</p>
+                      <p className="text-2xl font-bold text-gray-900">€24,580</p>
+                      <p className="text-sm text-gray-600 mt-1">Revenus ce mois</p>
+                      <div className="flex items-center mt-2 text-green-600">
+                        <TrendingUp size={14} className="mr-1" />
+                        <span className="text-sm font-medium">+18.7%</span>
+                      </div>
                     </div>
-                    <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-                      <FileText className="text-red-600" size={20} />
+                    <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center">
+                      <DollarSign className="text-gray-600" size={20} />
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Chart */}
-              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-semibold">Analytics</h3>
-                  <div className="bg-black text-white px-3 py-1 rounded text-sm">
-                    Friday 68°F
-                  </div>
-                </div>
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={chartData}>
-                      <XAxis 
-                        dataKey="name" 
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fontSize: 12, fill: '#6B7280' }}
-                      />
-                      <YAxis hide />
-                      <Line 
-                        type="monotone" 
-                        dataKey="value" 
-                        stroke="#000000" 
-                        strokeWidth={2}
-                        dot={{ fill: '#000000', strokeWidth: 2, r: 4 }}
-                        activeDot={{ r: 6, fill: '#000000' }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            </div>
-
-            {/* Right Column - Credit Card */}
-            <div className="space-y-6">
-              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                <h3 className="text-lg font-semibold mb-4">Available Credit</h3>
-                <div className="bg-gradient-to-r from-green-400 to-blue-500 p-6 rounded-lg text-white relative overflow-hidden">
-                  <div className="relative z-10">
-                    <p className="text-3xl font-bold">₹2,350</p>
-                    <p className="text-sm opacity-90 mt-1">Your current balance</p>
-                  </div>
-                  {/* Credit card illustration */}
-                  <div className="absolute top-4 right-4 opacity-20">
-                    <CreditCard size={60} />
-                  </div>
-                  <div className="absolute -bottom-4 -right-4 opacity-10">
-                    <div className="w-20 h-20 bg-white rounded-full"></div>
-                  </div>
-                </div>
-                <div className="mt-6 space-y-3">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Sales: 50%</span>
-                    <span className="text-gray-500">Referrals: 28%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div className="bg-blue-500 h-2 rounded-full" style={{ width: '50%' }}></div>
-                  </div>
-                  <button className="w-full bg-black text-white py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors">
-                    Add Credit →
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Recent Activity Table */}
-          <div className="mt-8 bg-white rounded-lg shadow-sm border border-gray-200">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <div className="flex space-x-8">
-                  <button 
-                    className="text-gray-500 hover:text-gray-700"
-                    onClick={() => setActiveTab('activity')}
-                  >
-                    Recent Activity
-                  </button>
-                  <button 
-                    className={`${activeTab === 'campaign' ? 'text-black border-b-2 border-black' : 'text-gray-500 hover:text-gray-700'} pb-2`}
-                    onClick={() => setActiveTab('campaign')}
-                  >
-                    Campaign
-                  </button>
-                  <button 
-                    className="text-gray-500 hover:text-gray-700"
-                    onClick={() => setActiveTab('bookings')}
-                  >
-                    My Bookings
-                  </button>
-                </div>
-                <div className="flex items-center space-x-4">
-                  <div className="relative">
-                    <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                    <input 
-                      type="text" 
-                      placeholder="Search" 
-                      className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm text-gray-600">Last week</span>
-                    <ToggleLeft size={20} className="text-gray-400" />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr className="text-left">
-                    <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Booking #</th>
-                    <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Start Time</th>
-                    <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Screens</th>
-                    <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Impression</th>
-                    <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">View</th>
-                    <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Interval</th>
-                    <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Cost</th>
-                    <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {bookingsData.map((booking: BookingData, index: number) => (
-                    <tr key={index} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{booking.id}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{booking.startTime}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{booking.screens}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{booking.impression}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{booking.view}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{booking.interval}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{booking.cost}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          <div className="w-2 h-2 bg-green-400 rounded-full mr-1"></div>
-                          {booking.status}
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-2xl font-bold text-gray-900">4.8</p>
+                      <p className="text-sm text-gray-600 mt-1">Note Moyenne</p>
+                      <div className="flex items-center mt-2">
+                        <Star className="text-yellow-400 mr-1" size={14} />
+                        <span className="text-sm text-gray-600">
+                          Sur 1,247 avis
                         </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+                      </div>
+                    </div>
+                    <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center">
+                      <Star className="text-gray-600" size={20} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Charts Section */}
+              <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-6">
+                {/* Revenue Chart */}
+                <div className="xl:col-span-2 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        Revenus & Réservations
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        Évolution sur les 7 derniers jours
+                      </p>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <select
+                        value={selectedPeriod}
+                        onChange={(e) => setSelectedPeriod(e.target.value)}
+                        className="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black"
+                      >
+                        <option value="7d">7 jours</option>
+                        <option value="30d">30 jours</option>
+                        <option value="90d">90 jours</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={revenueData}>
+                        <XAxis
+                          dataKey="name"
+                          axisLine={false}
+                          tickLine={false}
+                          tick={{ fontSize: 12, fill: "#6B7280" }}
+                        />
+                        <YAxis hide />
+                        <Line
+                          type="monotone"
+                          dataKey="value"
+                          stroke="#000000"
+                          strokeWidth={2}
+                          dot={{ fill: "#000000", strokeWidth: 2, r: 4 }}
+                          activeDot={{ r: 6, fill: "#000000" }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                {/* Service Distribution */}
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    Répartition des Services
+                  </h3>
+                  <div className="h-48">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={serviceDistribution}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={40}
+                          outerRadius={80}
+                          paddingAngle={5}
+                          dataKey="value"
+                        >
+                          {serviceDistribution.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="mt-4 space-y-2">
+                    {serviceDistribution.map((item, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between text-sm"
+                      >
+                        <div className="flex items-center">
+                          <div
+                            className="w-3 h-3 rounded-full mr-2"
+                            style={{ backgroundColor: item.color }}
+                          ></div>
+                          <span className="text-gray-700">{item.name}</span>
+                        </div>
+                        <span className="font-medium text-gray-900">
+                          {item.value}%
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Recent Bookings Table */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+                <div className="p-4 border-b border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      Réservations Récentes
+                    </h3>
+                    <button className="text-black hover:text-gray-700 text-sm font-medium">
+                      Voir tout
+                    </button>
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50">
+                      <tr className="text-left">
+                        <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Réservation
+                        </th>
+                        <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Client
+                        </th>
+                        <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Service
+                        </th>
+                        <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Professionnel
+                        </th>
+                        <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Date & Heure
+                        </th>
+                        <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Prix
+                        </th>
+                        <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Statut
+                        </th>
+                        <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {recentBookings.map((booking) => (
+                        <tr key={booking.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {booking.id}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <div className="text-sm font-medium text-gray-900">
+                              {booking.clientName}
+                            </div>
+                            <div className="text-sm text-gray-500 truncate max-w-xs">
+                              {booking.address}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                            {booking.serviceName}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <div className="text-sm font-medium text-gray-900">
+                              {booking.professionalName}
+                            </div>
+                            {booking.rating && (
+                              <div className="flex items-center text-sm text-gray-500">
+                                <Star className="w-4 h-4 text-yellow-400 mr-1" />
+                                {booking.rating}
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">
+                              {booking.date}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {booking.time}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {booking.price}€
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <span
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
+                                booking.status
+                              )}`}
+                            >
+                              {booking.status}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                            <div className="flex items-center space-x-2">
+                              <button className="text-gray-600 hover:text-black">
+                                <Eye className="w-4 h-4" />
+                              </button>
+                              <button className="text-gray-600 hover:text-black">
+                                <Edit className="w-4 h-4" />
+                              </button>
+                              <button className="text-gray-600 hover:text-black">
+                                <MoreHorizontal className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          )}
+
+          {activeTab === "users" && <AdminUser />}
+
+          {/* Padding bottom pour éviter que le contenu soit coupé */}
+          <div className="h-6"></div>
         </main>
       </div>
     </div>
   );
 };
 
-export default Dashboard;
+export default AdminDashboard;
