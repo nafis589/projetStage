@@ -351,7 +351,11 @@ export default function ClientDashboard() {
   }, [session, status, router]);
 
   if (status === "loading") {
-    return <div>Chargement...</div>;
+    return (
+      <div className="flex items-center justify-center h-screen">
+        Chargement...
+      </div>
+    );
   }
 
   return (
@@ -398,7 +402,7 @@ export default function ClientDashboard() {
                 <Clock className="w-4 h-4" />
                 <span className="text-sm">Activité</span>
               </div>
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-md">
+              <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center shadow-md">
                 <User className="w-4 h-4 text-white" />
               </div>
               <ChevronDown className="w-4 h-4 text-gray-600" />
@@ -420,25 +424,22 @@ export default function ClientDashboard() {
                   <div className="flex flex-col items-center">
                     {/* Avatar with status indicator */}
                     <div className="relative mb-4">
-                      <div className="w-20 h-20 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center border-4 border-white/20 shadow-xl">
-                        <User className="w-10 h-10 text-black drop-shadow-lg" />
-                      </div>
-                      <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-white border-3 border-black rounded-full shadow-lg flex items-center justify-center">
-                        <div className="w-2 h-2 bg-black rounded-full animate-pulse"></div>
+                      <div className="w-20 h-20 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center border-4 border-black/20">
+                        <User className="w-10 h-10 text-black" />
                       </div>
                     </div>
 
                     {/* User name */}
-                    <h3 className="font-bold text-xl text-center mb-1 drop-shadow-sm">
+                    <h3 className="font-bold text-2xl text-center mb-1 drop-shadow-sm">
                       {clientProfile
                         ? `${clientProfile.firstname} ${clientProfile.lastname}`
                         : session?.user?.name || "Utilisateur"}
                     </h3>
 
                     {/* Status badge */}
-                    <div className="bg-white/10 backdrop-blur-sm px-3 py-1 rounded-full border border-white/20">
-                      <span className="text-xs font-medium text-white">
-                        Actif
+                    <div className="bg-gray/10 backdrop-blur-sm px-3 py-1 rounded-full border border-white/20">
+                      <span className="text-xs font-medium text-black">
+                        Client
                       </span>
                     </div>
                   </div>
@@ -490,7 +491,7 @@ export default function ClientDashboard() {
                   {/* Logout button */}
                   <button
                     onClick={() => signOut({ callbackUrl: "/login" })}
-                    className="w-full flex items-center justify-center gap-3 bg-black hover:bg-gray-800 text-white py-3 px-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 font-semibold group"
+                    className="w-full flex items-center justify-center gap-3 bg-red-50/50 hover:bg-red-50 text-red-600 py-3 px-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 font-semibold group"
                   >
                     <LogOut className="w-5 h-5 group-hover:rotate-12 transition-transform duration-200" />
                     <span>Se déconnecter</span>

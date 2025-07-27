@@ -63,9 +63,19 @@ const LoginForm = () => {
       if (response.ok) {
         const userData = await response.json();
         console.log(userData);
+        if (userData.status === "inactif") {
+          toast({
+            variant: "destructive",
+            title: "Accès refusé",
+            description:
+              "votre compte est inactif veuillez contacter l'administrateur",
+          });
+          setLoading(false);
+          return;
+        }
         if (userData.role === "client") {
           router.push(`/dashboard/client/${userData.id}`);
-        } 
+        }
         if (userData.role === "professional") {
           router.push(`/dashboard/professional/${userData.id}`);
         }
