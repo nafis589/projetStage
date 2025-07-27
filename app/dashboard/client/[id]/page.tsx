@@ -1,8 +1,16 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, User, Clock, Calendar, MapPin } from "lucide-react";
+import {
+  ChevronDown,
+  User,
+  Clock,
+  Calendar,
+  MapPin,
+  LogOut,
+  Mail,
+} from "lucide-react";
 import CustomMap from "../../../../components/CustomMap";
 import SearchResults from "../../../../app/components/SearchResults";
 import BookingHistory from "../../../../app/components/BookingHistory";
@@ -25,13 +33,24 @@ interface Professional {
   longitude?: number;
 }
 
+interface ClientProfile {
+  firstname: string;
+  lastname: string;
+  email: string;
+  address: string | null;
+  city: string | null;
+}
+
 export default function ClientDashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("course");
   const [pickupLocation, setPickupLocation] = useState<string>("");
   const [dropoffLocation, setDropoffLocation] = useState<string>("");
-  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [userLocation, setUserLocation] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
   const [isLocating, setIsLocating] = useState<boolean>(false);
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [selectedTime, setSelectedTime] = useState<string>("");
@@ -39,10 +58,16 @@ export default function ClientDashboard() {
   const [showTimePicker, setShowTimePicker] = useState<boolean>(false);
   const [showResults, setShowResults] = useState<boolean>(false);
   const [professionals, setProfessionals] = useState<Professional[]>([]);
-  const [selectedProfessional, setSelectedProfessional] = useState<Professional | null>(null);
+  const [selectedProfessional, setSelectedProfessional] =
+    useState<Professional | null>(null);
+  const [showUserModal, setShowUserModal] = useState<boolean>(false);
+  const [clientProfile, setClientProfile] = useState<ClientProfile | null>(
+    null
+  );
 
   const dateRef = useRef<HTMLDivElement | null>(null);
   const timeRef = useRef<HTMLDivElement | null>(null);
+  const userModalRef = useRef<HTMLDivElement | null>(null);
 
   // Générer les options d'heures
   const timeOptions: string[] = [];
@@ -119,19 +144,33 @@ export default function ClientDashboard() {
     const fetchLocation = async () => {
       if (selectedProfessional) {
         // Find the professional in the list to check if we already have the location
-        const professionalInList = professionals.find(p => p.id === selectedProfessional.id);
+        const professionalInList = professionals.find(
+          (p) => p.id === selectedProfessional.id
+        );
 
         // If we don't have lat/lng, fetch it.
-        if (professionalInList && (professionalInList.latitude === null || professionalInList.longitude === null || professionalInList.latitude === undefined || professionalInList.longitude === undefined)) {
+        if (
+          professionalInList &&
+          (professionalInList.latitude === null ||
+            professionalInList.longitude === null ||
+            professionalInList.latitude === undefined ||
+            professionalInList.longitude === undefined)
+        ) {
           try {
-            const response = await fetch(`/api/location?userId=${selectedProfessional.id}`);
+            const response = await fetch(
+              `/api/location?userId=${selectedProfessional.id}`
+            );
             if (response.ok) {
               const locationData = await response.json();
               if (locationData) {
-                setProfessionals(prev => 
-                  prev.map(p => 
-                    p.id === selectedProfessional.id 
-                      ? { ...p, latitude: locationData.latitude, longitude: locationData.longitude } 
+                setProfessionals((prev) =>
+                  prev.map((p) =>
+                    p.id === selectedProfessional.id
+                      ? {
+                          ...p,
+                          latitude: locationData.latitude,
+                          longitude: locationData.longitude,
+                        }
                       : p
                   )
                 );
@@ -217,7 +256,9 @@ export default function ClientDashboard() {
         (error) => {
           console.error("Error getting location:", error);
           // Handle error (e.g., show a toast notification)
-          alert("Impossible d'obtenir la position. Veuillez autoriser la géolocalisation.");
+          alert(
+            "Impossible d'obtenir la position. Veuillez autoriser la géolocalisation."
+          );
           setIsLocating(false);
         }
       );
@@ -230,40 +271,71 @@ export default function ClientDashboard() {
   // Fonction de recherche
   const handleSearch = async () => {
     if (!pickupLocation) {
-        alert("Veuillez entrer un service à rechercher.");
-        return;
+      alert("Veuillez entrer un service à rechercher.");
+      return;
     }
     if (!userLocation) {
-        alert("Veuillez fournir votre localisation.");
-        return;
+      alert("Veuillez fournir votre localisation.");
+      return;
     }
 
     const params = new URLSearchParams({
-        service: pickupLocation,
-        latitude: userLocation.lat.toString(),
-        longitude: userLocation.lng.toString(),
+      service: pickupLocation,
+      latitude: userLocation.lat.toString(),
+      longitude: userLocation.lng.toString(),
     });
 
     if (selectedDate) {
-        params.append('date', selectedDate);
+      params.append("date", selectedDate);
     }
     if (selectedTime) {
-        params.append('time', selectedTime);
+      params.append("time", selectedTime);
     }
 
     try {
-        const response = await fetch(`/api/professionals/search?${params.toString()}`);
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-        const data = await response.json();
-        setProfessionals(data);
-        setShowResults(true);
+      const response = await fetch(
+        `/api/professionals/search?${params.toString()}`
+      );
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+      const data = await response.json();
+      setProfessionals(data);
+      setShowResults(true);
     } catch (error) {
-        console.error("Failed to fetch professionals:", error);
-        // Handle error, e.g., show a toast
+      console.error("Failed to fetch professionals:", error);
+      // Handle error, e.g., show a toast
     }
   };
+
+  useEffect(() => {
+    const fetchClientProfile = async () => {
+      console.log(session);
+      if (session) {
+        try {
+          console.log(session);
+          const response = await fetch("/api/clientProfil", {
+            credentials: "include",
+          });
+          if (response.ok) {
+            const data = await response.json();
+            setClientProfile(data);
+          } else {
+            const errorText = await response.text();
+            console.error(
+              "Failed to fetch client profile",
+              response.status,
+              errorText
+            );
+          }
+        } catch (error) {
+          console.error("Error fetching client profile:", error);
+        }
+      }
+    };
+
+    fetchClientProfile();
+  }, [session]);
 
   useEffect(() => {
     if (status === "loading") return;
@@ -300,7 +372,6 @@ export default function ClientDashboard() {
                   : "border-transparent text-gray-500 hover:text-gray-700"
               }`}
             >
-              
               <span className="font-medium">Reservation</span>
             </button>
             <button
@@ -313,25 +384,126 @@ export default function ClientDashboard() {
             >
               <span className="font-medium">Historique</span>
             </button>
-            
           </div>
 
           {/* User Section */}
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-1 text-gray-600">
-              <Clock className="w-4 h-4" />
-              <span className="text-sm">Activité</span>
+          <div className="relative">
+            <div
+              ref={userModalRef}
+              className="flex items-center space-x-4 cursor-pointer"
+              onMouseEnter={() => setShowUserModal(true)}
+              onMouseLeave={() => setShowUserModal(false)}
+            >
+              <div className="flex items-center space-x-1 text-gray-600">
+                <Clock className="w-4 h-4" />
+                <span className="text-sm">Activité</span>
+              </div>
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-md">
+                <User className="w-4 h-4 text-white" />
+              </div>
+              <ChevronDown className="w-4 h-4 text-gray-600" />
             </div>
-            <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-              <User className="w-4 h-4" />
-            </div>
-            <ChevronDown className="w-4 h-4 text-gray-600" />
+
+            {/* User Modal - Black & White Design */}
+            {showUserModal && (
+              <div
+                className="absolute top-full right-0 mt-4 w-80 bg-white backdrop-blur-xl rounded-3xl shadow-2xl border border-gray-200 z-50 overflow-hidden transform transition-all duration-300 ease-out animate-in slide-in-from-top-2"
+                onMouseEnter={() => setShowUserModal(true)}
+                onMouseLeave={() => setShowUserModal(false)}
+                style={{
+                  boxShadow:
+                    "0 20px 40px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.05)",
+                }}
+              >
+                {/* Header with black background */}
+                <div className="relative bg-white p-6 text-black">
+                  <div className="flex flex-col items-center">
+                    {/* Avatar with status indicator */}
+                    <div className="relative mb-4">
+                      <div className="w-20 h-20 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center border-4 border-white/20 shadow-xl">
+                        <User className="w-10 h-10 text-black drop-shadow-lg" />
+                      </div>
+                      <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-white border-3 border-black rounded-full shadow-lg flex items-center justify-center">
+                        <div className="w-2 h-2 bg-black rounded-full animate-pulse"></div>
+                      </div>
+                    </div>
+
+                    {/* User name */}
+                    <h3 className="font-bold text-xl text-center mb-1 drop-shadow-sm">
+                      {clientProfile
+                        ? `${clientProfile.firstname} ${clientProfile.lastname}`
+                        : session?.user?.name || "Utilisateur"}
+                    </h3>
+
+                    {/* Status badge */}
+                    <div className="bg-white/10 backdrop-blur-sm px-3 py-1 rounded-full border border-white/20">
+                      <span className="text-xs font-medium text-white">
+                        Actif
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Content section */}
+                <div className="p-6 space-y-4">
+                  {/* User details */}
+                  <div className="space-y-3">
+                    {clientProfile?.email && (
+                      <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                        <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center">
+                          <Mail className="w-4 h-4 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                            Email
+                          </p>
+                          <p className="text-sm font-medium text-gray-900 truncate">
+                            {clientProfile.email}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {(clientProfile?.address || clientProfile?.city) && (
+                      <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                        <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center">
+                          <MapPin className="w-4 h-4 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                            Adresse
+                          </p>
+                          <p className="text-sm font-medium text-gray-900 truncate">
+                            {clientProfile.address}
+                            {clientProfile.city
+                              ? `, ${clientProfile.city}`
+                              : ""}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Divider */}
+                  <div className="border-t border-gray-200 my-4"></div>
+
+                  {/* Logout button */}
+                  <button
+                    onClick={() => signOut({ callbackUrl: "/login" })}
+                    className="w-full flex items-center justify-center gap-3 bg-black hover:bg-gray-800 text-white py-3 px-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 font-semibold group"
+                  >
+                    <LogOut className="w-5 h-5 group-hover:rotate-12 transition-transform duration-200" />
+                    <span>Se déconnecter</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      {activeTab === 'course' && (
+      {activeTab === "course" && (
         <div className="flex flex-1">
           {/* Form Sidebar */}
           <div className="w-96 bg-white shadow-lg flex flex-col">
@@ -383,7 +555,9 @@ export default function ClientDashboard() {
               <div className="flex gap-2 mb-6">
                 {/* Date Input */}
                 <div ref={dateRef} className="relative flex-1">
-                  <label className="text-xs text-gray-500 mb-1 block">Date</label>
+                  <label className="text-xs text-gray-500 mb-1 block">
+                    Date
+                  </label>
                   <button
                     onClick={() => setShowDatePicker(!showDatePicker)}
                     className="w-full flex items-center justify-between px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black bg-white hover:border-gray-400 transition-colors"
@@ -560,32 +734,46 @@ export default function ClientDashboard() {
           )}
 
           {/* Map Container */}
-          <div className={`relative transition-all duration-300 ${showResults ? 'flex-1' : 'flex-[2]'}`}>
+          <div
+            className={`relative transition-all duration-300 ${
+              showResults ? "flex-1" : "flex-[2]"
+            }`}
+          >
             <CustomMap
               id="client-dashboard-map"
-              center={userLocation ? [userLocation.lng, userLocation.lat] : [1.2228, 6.1319]} // Corrected to [lng, lat]
+              center={
+                userLocation
+                  ? [userLocation.lng, userLocation.lat]
+                  : [1.2228, 6.1319]
+              } // Corrected to [lng, lat]
               zoom={13}
               className="w-full h-full"
               markers={[
-                ...professionals.map(p => ({
+                ...professionals.map((p) => ({
                   id: p.id,
                   latitude: p.latitude || 0,
                   longitude: p.longitude || 0,
                   isSelected: selectedProfessional?.id === p.id,
-                  isUser: false
+                  isUser: false,
                 })),
-                ...(userLocation ? [{
-                  id: 'user-location',
-                  latitude: userLocation.lat,
-                  longitude: userLocation.lng,
-                  isUser: true
-                }] : [])
-              ].filter(marker => marker.latitude !== 0 && marker.longitude !== 0)}
+                ...(userLocation
+                  ? [
+                      {
+                        id: "user-location",
+                        latitude: userLocation.lat,
+                        longitude: userLocation.lng,
+                        isUser: true,
+                      },
+                    ]
+                  : []),
+              ].filter(
+                (marker) => marker.latitude !== 0 && marker.longitude !== 0
+              )}
             />
           </div>
         </div>
       )}
-      {activeTab === 'history' && <BookingHistory />}
+      {activeTab === "history" && <BookingHistory />}
     </div>
   );
 }
