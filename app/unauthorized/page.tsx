@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Ban } from "lucide-react"; // Icône pour "Accès refusé"
+import { Ban } from "lucide-react";
 
 export default function UnauthorizedPage() {
   return (
