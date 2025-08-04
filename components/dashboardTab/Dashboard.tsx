@@ -262,28 +262,28 @@ const Dashboard: React.FC<DashboardProps> = ({ onQuickAction }) => {
           title="Réservations Totales"
           value={String(dashboardData.totalBookings)}
           icon={Calendar}
-          color="bg-gradient-to-r from-blue-600 to-blue-800 bg-opacity-60"
+          color="bg-gradient-to-r from-blue-400 to-blue-500 bg-opacity-60"
           delay={100}
         />
         <StatCard
           title="Taux d'Acceptation"
           value={`${dashboardData.acceptanceRate}%`}
           icon={CheckCircle}
-          color="from-emerald-600 to-emerald-800"
+          color="from-emerald-400 to-emerald-500"
           delay={200}
         />
         <StatCard
           title="Revenus ce Mois"
           value={`${dashboardData.monthlyRevenue}`}
           icon={SwissFranc}
-          color="from-purple-600 to-purple-800"
+          color="from-purple-400 to-purple-500"
           delay={300}
         />
         <StatCard
           title="Note Moyenne"
           value={String(dashboardData.avgRating)}
           icon={Star}
-          color="from-amber-600 to-amber-800"
+          color="from-amber-400 to-amber-500"
           delay={400}
         />
       </div>
