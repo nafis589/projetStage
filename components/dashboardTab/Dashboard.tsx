@@ -3,7 +3,7 @@ import {
   Calendar,
   TrendingUp,
   Star,
-  Euro,
+  SwissFranc,
   CheckCircle,
   AlertCircle,
   Settings,
@@ -274,8 +274,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onQuickAction }) => {
         />
         <StatCard
           title="Revenus ce Mois"
-          value={`${dashboardData.monthlyRevenue} F`}
-          icon={Euro}
+          value={`${dashboardData.monthlyRevenue}`}
+          icon={SwissFranc}
           color="from-purple-600 to-purple-800"
           delay={300}
         />

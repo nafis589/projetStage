@@ -1376,7 +1376,7 @@ const Bookings: React.FC = () => {
                     </div>
                   </td>
                   <td className="py-3 px-4 text-gray-600 font-medium">
-                    {`${booking.price}€`}
+                    {`${booking.price}F`}
                   </td>
                   <td className="py-3 px-4">
                     <span
