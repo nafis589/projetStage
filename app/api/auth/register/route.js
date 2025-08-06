@@ -8,7 +8,7 @@ const query = util.promisify(db.query).bind(db);
 export const POST = async (req) => {
   const user = await req.json();
   try {
-    const hashedPassword = await bcrypt.hash(user.password, 10);
+    const hashedPassword = await bcrypt.hash(user.password, 8);
     const results = await query(
       `INSERT INTO users (firstname, lastname, email, password, role) VALUES ('${user.firstname}', '${user.lastname}', '${user.email}', '${hashedPassword}', 'client')`
     );

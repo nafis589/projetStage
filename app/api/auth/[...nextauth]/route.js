@@ -15,7 +15,6 @@ export const authOptions = {
                 token.role = user.role;
                 token.userId = user.id;
             }
-            console.log(token);
             return token;
         },
         async session({ session, token }) {
@@ -39,9 +38,12 @@ export const authOptions = {
                     return null;
                 }
 
-                if (user.password){
+                if (user.password) {
                     const isValid = await bcrypt.compare(credentials.password, user.password);
-                    return isValid ? user : null;
+                    if (isValid) {
+                        return { id: user.id, name: user.firstname, email: user.email, role: user.role };
+                    }
+                    return null;
                 }
             }
         })
