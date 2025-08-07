@@ -107,5 +107,3 @@ ALTER TABLE users
 ADD COLUMN status ENUM('actif', 'inactif') NOT NULL DEFAULT 'actif' 
 AFTER role;
 
-INSERT INTO users (firstname, lastname, email, password, role)
-VALUES ('nafis', 'TOURE', 'nafis@gmail.com', '$2b$10$RHg7fnqCE75Z9nLL9YcAU.3FoICyGvzg1Ghj6ifHm.FspwlrH/OfC', 'admin');
