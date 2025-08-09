@@ -10,6 +10,8 @@ import {
   MapPin,
   LogOut,
   Mail,
+  Menu,
+  X,
 } from "lucide-react";
 import CustomMap from "../../../../components/CustomMap";
 import SearchResults from "../../../../app/components/SearchResults";
@@ -64,10 +66,12 @@ export default function ClientDashboard() {
   const [clientProfile, setClientProfile] = useState<ClientProfile | null>(
     null
   );
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
 
   const dateRef = useRef<HTMLDivElement | null>(null);
   const timeRef = useRef<HTMLDivElement | null>(null);
   const userModalRef = useRef<HTMLDivElement | null>(null);
+  const userMenuContainerRef = useRef<HTMLDivElement | null>(null);
 
   // Générer les options d'heures
   const timeOptions: string[] = [];
@@ -133,6 +137,12 @@ export default function ClientDashboard() {
       }
       if (timeRef.current && !timeRef.current.contains(event.target as Node)) {
         setShowTimePicker(false);
+      }
+      if (
+        userMenuContainerRef.current &&
+        !userMenuContainerRef.current.contains(event.target as Node)
+      ) {
+        setShowUserModal(false);
       }
     };
 
@@ -361,13 +371,29 @@ export default function ClientDashboard() {
   return (
     <div className="flex flex-col h-screen bg-gray-50">
       {/* Top Bar */}
-      <div className="bg-white shadow-sm border-b border-gray-200">
-        <div className="flex items-center justify-between px-6 py-4">
-          {/* Logo */}
-          <h1 className="text-2xl font-bold">Geservice</h1>
+      <div className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-4 gap-3">
+          {/* Logo + Mobile Menu Button */}
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              className="md:hidden inline-flex items-center justify-center p-2 rounded-md hover:bg-gray-100"
+              aria-label="Ouvrir le menu"
+              aria-controls="mobile-menu"
+              aria-expanded={isMobileMenuOpen}
+              onClick={() => setIsMobileMenuOpen((v) => !v)}
+            >
+              {isMobileMenuOpen ? (
+                <X className="w-6 h-6" />
+              ) : (
+                <Menu className="w-6 h-6" />
+              )}
+            </button>
+            <h1 className="text-2xl font-bold">Geservice</h1>
+          </div>
 
           {/* Tabs */}
-          <div className="flex space-x-8">
+          <div className="hidden md:flex space-x-8">
             <button
               onClick={() => setActiveTab("course")}
               className={`flex items-center space-x-2 pb-2 border-b-2 transition-colors ${
@@ -391,12 +417,15 @@ export default function ClientDashboard() {
           </div>
 
           {/* User Section */}
-          <div className="relative">
+          <div className="relative" ref={userMenuContainerRef}>
             <div
               ref={userModalRef}
               className="flex items-center space-x-4 cursor-pointer"
               onMouseEnter={() => setShowUserModal(true)}
               onMouseLeave={() => setShowUserModal(false)}
+              onClick={() => setShowUserModal((v) => !v)}
+              aria-haspopup="menu"
+              aria-expanded={showUserModal}
             >
               <div className="flex items-center space-x-1 text-gray-600">
                 <Clock className="w-4 h-4" />
@@ -501,13 +530,46 @@ export default function ClientDashboard() {
             )}
           </div>
         </div>
+        {/* Mobile menu panel */}
+        {isMobileMenuOpen && (
+          <div id="mobile-menu" className="md:hidden border-t border-gray-200">
+            <div className="px-4 py-3 space-y-2">
+              <button
+                onClick={() => {
+                  setActiveTab("course");
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`w-full text-left px-3 py-2 rounded-md transition-colors ${
+                  activeTab === "course"
+                    ? "bg-black text-white"
+                    : "hover:bg-gray-100 text-gray-700"
+                }`}
+              >
+                Reservation
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab("history");
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`w-full text-left px-3 py-2 rounded-md transition-colors ${
+                  activeTab === "history"
+                    ? "bg-black text-white"
+                    : "hover:bg-gray-100 text-gray-700"
+                }`}
+              >
+                Historique
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Main Content */}
       {activeTab === "course" && (
-        <div className="flex flex-1">
+        <div className="flex flex-1 flex-col lg:flex-row">
           {/* Form Sidebar */}
-          <div className="w-96 bg-white shadow-lg flex flex-col">
+          <div className="w-full lg:w-96 shrink-0 bg-white shadow-lg flex flex-col">
             {/* Form Header */}
             <div className="p-6">
               <h2 className="text-xl font-semibold">
@@ -516,7 +578,7 @@ export default function ClientDashboard() {
             </div>
 
             {/* Form Content */}
-            <div className="bg-white p-6 max-w-md">
+            <div className="bg-white p-6 md:max-w-md">
               {/* Location Inputs */}
               <div className="space-y-4 mb-4">
                 <div className="relative">
@@ -576,7 +638,7 @@ export default function ClientDashboard() {
 
                   {/* Date Popover avec Calendrier */}
                   {showDatePicker && (
-                    <div className="absolute top-full left-0 mb-2 bg-white border border-gray-200 rounded-lg shadow-xl z-10 p-4 w-80">
+                    <div className="fixed inset-x-0 bottom-0 md:absolute md:top-full md:left-0 md:mb-2 bg-white border border-gray-200 rounded-t-2xl md:rounded-lg shadow-2xl z-50 p-4 w-full md:w-80 max-h-[70vh] overflow-y-auto">
                       {/* En-tête du calendrier */}
                       <div className="flex items-center justify-between mb-4">
                         <button
@@ -689,7 +751,7 @@ export default function ClientDashboard() {
 
                   {/* Time Popover */}
                   {showTimePicker && (
-                    <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-10 max-h-64 overflow-y-auto">
+                    <div className="fixed inset-x-0 bottom-0 md:absolute md:top-full md:left-0 md:right-0 md:mt-2 bg-white border border-gray-200 rounded-t-2xl md:rounded-lg shadow-2xl z-50 max-h-[60vh] overflow-y-auto">
                       <div className="p-2">
                         <button
                           onClick={() => handleTimeSelect("")}
@@ -726,18 +788,20 @@ export default function ClientDashboard() {
 
           {/* Search Results */}
           {showResults && (
-            <SearchResults
-              professionals={professionals}
-              selectedProfessional={selectedProfessional}
-              onProfessionalSelect={setSelectedProfessional}
-              userLocation={userLocation}
-            />
+            <div className="w-full lg:w-[480px] max-w-full order-3 lg:order-none">
+              <SearchResults
+                professionals={professionals}
+                selectedProfessional={selectedProfessional}
+                onProfessionalSelect={setSelectedProfessional}
+                userLocation={userLocation}
+              />
+            </div>
           )}
 
           {/* Map Container */}
           <div
-            className={`relative transition-all duration-300 ${
-              showResults ? "flex-1" : "flex-[2]"
+            className={`relative w-full transition-all duration-300 order-2 lg:order-none ${
+              showResults ? "lg:flex-1" : "lg:flex-[2]"
             }`}
           >
             <CustomMap
@@ -748,7 +812,7 @@ export default function ClientDashboard() {
                   : [1.2228, 6.1319]
               } // Corrected to [lng, lat]
               zoom={13}
-              className="w-full h-full"
+              className="w-full h-[45vh] sm:h-[50vh] lg:h-full"
               markers={[
                 ...professionals.map((p) => ({
                   id: p.id,
