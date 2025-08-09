@@ -78,7 +78,7 @@ const CustomMap: React.FC<CustomMapProps> = ({
         map.current = null;
       }
     };
-  }, [isClient]); // Removed center and zoom from dependencies
+  }, [isClient, center, zoom]);
 
   // Update map center when prop changes
   useEffect(() => {

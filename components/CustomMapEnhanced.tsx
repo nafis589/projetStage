@@ -35,9 +35,6 @@ const CustomMapEnhanced: React.FC<CustomMapEnhancedProps> = ({
   const map = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<maplibregl.Marker[]>([]);
   const [isClient, setIsClient] = useState(false);
-  const [userLocation, setUserLocation] = useState<[number, number] | null>(
-    null
-  );
 
   // Ensure component only renders on client side (Next.js SSR compatibility)
   useEffect(() => {
@@ -53,8 +50,7 @@ const CustomMapEnhanced: React.FC<CustomMapEnhancedProps> = ({
             position.coords.longitude,
             position.coords.latitude,
           ];
-          setUserLocation(coords);
-          if (map.current) {
+                    if (map.current) {
             map.current.flyTo({ center: coords, zoom: 15 });
           }
         },
@@ -191,13 +187,13 @@ const CustomMapEnhanced: React.FC<CustomMapEnhancedProps> = ({
     showUserLocation,
     addMarkers,
     clearMarkers,
+    markers.length,
   ]);
 
   // Update markers when markers prop changes
   useEffect(() => {
-    if (map.current && markers.length > 0) {
-      addMarkers(markers);
-    }
+    if (!map.current) return;
+    addMarkers(markers);
   }, [markers, addMarkers]);
 
   // Don't render anything on server side
