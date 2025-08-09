@@ -12,8 +12,18 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { UserPlus, ArrowRight, ArrowLeft, Upload } from "lucide-react";
 import { useState } from "react";
-import FileUpload from "@/components/ui/FileUpload";
-import { signIn } from "next-auth/react";
+import FileUploadWithAPI from "@/components/ui/FileUploadWithAPI";
+import { signIn, getSession } from "next-auth/react";
+
+interface UploadedFileInfo {
+  id: number;
+  filename: string;
+  originalName: string;
+  size: number;
+  type: string;
+  documentType: string;
+  path: string;
+}
 
 const nameRegex = /^[A-Za-zÀ-ÖØ-öø-ÿ' -]+$/;
 
@@ -42,7 +52,7 @@ const ProfessionelForm = () => {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState<'form' | 'upload'>('form');
   const [formData, setFormData] = useState<FormData | null>(null);
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFileInfo[]>([]);
 
   const {
     register,
@@ -56,7 +66,6 @@ const ProfessionelForm = () => {
   const onFormSubmit = async (data: FormData) => {
     setLoading(true);
     setFormData(data);
-    
     try {
       // Créer le compte utilisateur
       const response = await fetch("/api/auth/professionel", {
@@ -76,15 +85,44 @@ const ProfessionelForm = () => {
         return;
       }
 
+      // Connexion automatique après création du compte
+      const result = await signIn('credentials', {
+        email: data.email,
+        password: data.password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        toast({
+          variant: "destructive",
+          title: "Erreur de connexion",
+          description: "Votre compte a été créé, mais la connexion automatique a échoué. Veuillez vous connecter manuellement.",
+        });
+        router.push('/login');
+        return;
+      }
+
+      // Récupérer manuellement la session pour s'assurer qu'elle est bien établie
+      const session = await getSession();
+
+      if (!session) {
+        toast({
+          variant: "destructive",
+          title: "Erreur de session",
+          description: "Impossible de vérifier votre session. Veuillez vous connecter manuellement.",
+        });
+        router.push('/login');
+        return;
+      }
+
       toast({
         variant: "success",
         title: "Informations enregistrées !",
         description: "Veuillez maintenant télécharger vos documents.",
       });
 
-      // Passer à l'étape suivante
+      // Passer à l'étape suivante (upload)
       setCurrentStep('upload');
-      
     } catch (error) {
       console.error("Erreur lors de l'inscription :", error);
       toast({
@@ -98,8 +136,13 @@ const ProfessionelForm = () => {
   };
 
   // Étape 2: Gestion des fichiers uploadés
-  const handleFilesSelected = (files: File[]) => {
+  const handleFilesUploaded = (files: UploadedFileInfo[]) => {
     setUploadedFiles(files);
+    toast({
+      variant: "success",
+      title: "Documents uploadés !",
+      description: `${files.length} document(s) uploadé(s) avec succès.`,
+    });
   };
 
   // Étape 3: Connexion finale
@@ -128,11 +171,10 @@ const ProfessionelForm = () => {
       toast({
         variant: "success",
         title: "Connexion réussie !",
-        description: "Bienvenue dans votre espace professionnel.",
+        description: "Compte en attente de validation.",
       });
 
-      // Redirection vers le dashboard professionnel
-      router.push('/dashboard/professional');
+      router.push('/');
       
     } catch (error) {
       console.error("Erreur lors de la connexion :", error);
@@ -276,10 +318,10 @@ const ProfessionelForm = () => {
           </div>
 
           <div className="mb-8">
-            <FileUpload
-              onFilesSelected={handleFilesSelected}
+            <FileUploadWithAPI
+              onFilesUploaded={handleFilesUploaded}
               acceptedTypes={['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png']}
-              maxFileSize={5}
+              maxFileSizeMB={5}
               maxFiles={5}
               allowMultiple={true}
             />

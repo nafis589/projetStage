@@ -2,7 +2,6 @@ import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { Upload, X, File, Image, Video, FileText, Archive, CheckCircle, AlertCircle } from 'lucide-react';
 
 interface FileUploadProps {
-  onFilesSelected?: (files: File[]) => void;
   acceptedTypes?: string[];
   maxFileSize?: number; // en MB
   maxFiles?: number;
@@ -17,8 +16,7 @@ interface UploadedFile {
   progress: number;
 }
 
-const FileUpload: React.FC<FileUploadProps> = ({
-  onFilesSelected,
+const FileUploadWithAPI: React.FC<FileUploadProps> = ({
   acceptedTypes = ['*'],
   maxFileSize = 10,
   maxFiles = 5,
@@ -38,7 +36,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
   const getFileIcon = useCallback((fileName: string) => {
     const ext = fileName.split('.').pop()?.toLowerCase();
     if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext || '')) {
-      return <Image className="w-6 h-6 text-blue-500" />;
+      return <Image className="w-6 h-6 text-blue-500" aria-label='Image file' />;
     }
     if (['mp4', 'avi', 'mov', 'wmv', 'flv'].includes(ext || '')) {
       return <Video className="w-6 h-6 text-purple-500" />;
@@ -64,44 +62,64 @@ const FileUpload: React.FC<FileUploadProps> = ({
     if (!acceptedTypes.includes('*')) {
       const fileType = file.type;
       const fileExtension = `.${file.name.split('.').pop()?.toLowerCase()}`;
-      const isTypeValid = acceptedTypes.some(type => 
-        fileType.includes(type.replace('*', '')) || 
+      const isTypeValid = acceptedTypes.some(type =>
+        fileType.includes(type.replace('*', '')) ||
         type === fileExtension
       );
       if (!isTypeValid) {
         return `Type de fichier non accepté: ${file.name}`;
       }
     }
-
     if (file.size > maxFileSize * 1024 * 1024) {
       return `Fichier trop volumineux: ${file.name} (max ${maxFileSize}MB)`;
     }
-
     return null;
   }, [acceptedTypes, maxFileSize]);
 
-  const simulateUpload = useCallback((fileId: string) => {
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += Math.random() * 30;
-      if (progress >= 100) {
-        progress = 100;
-        clearInterval(interval);
-        setUploadedFiles(prev => 
-          prev.map(f => f.id === fileId 
-            ? { ...f, status: 'success' as const, progress: 100 }
-            : f
-          )
-        );
-      } else {
-        setUploadedFiles(prev => 
-          prev.map(f => f.id === fileId 
-            ? { ...f, progress }
-            : f
-          )
-        );
+  const uploadFile = useCallback(async (file: File, fileId: string) => {
+    try {
+      const formData = new FormData();
+      formData.append('files', file);
+
+      const response = await fetch('/api/upload/documents', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const rawText = await response.text();
+        let errorMessage = rawText;
+        try {
+          const parsed = JSON.parse(rawText);
+          if (parsed?.error) {
+            errorMessage = parsed.error;
+          }
+        } catch {
+          // pas du JSON, on garde rawText
+        }
+
+        console.error('Upload error:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorMessage,
+          raw: rawText,
+        });
+
+        throw new Error(errorMessage || 'Erreur lors de l\'upload');
       }
-    }, 100);
+
+      await response.json();
+
+      setUploadedFiles(prev =>
+        prev.map(f => f.id === fileId ? { ...f, status: 'success', progress: 100 } : f)
+      );
+    } catch (err) {
+      console.error("Upload failed:", err);
+      setUploadedFiles(prev =>
+        prev.map(f => f.id === fileId ? { ...f, status: 'error', progress: 100 } : f)
+      );
+    }
   }, []);
 
   const handleFiles = useCallback((files: FileList) => {
@@ -136,10 +154,9 @@ const FileUpload: React.FC<FileUploadProps> = ({
     }));
 
     setUploadedFiles(prev => [...prev, ...newUploadedFiles]);
-    newUploadedFiles.forEach(({ id }) => simulateUpload(id));
-    
-    onFilesSelected?.(validFiles);
-  }, [allowMultiple, uploadedFiles.length, maxFiles, validateFile, simulateUpload, onFilesSelected]);
+
+    newUploadedFiles.forEach(({ file, id }) => uploadFile(file, id));
+  }, [allowMultiple, uploadedFiles.length, maxFiles, validateFile, uploadFile]);
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -164,7 +181,6 @@ const FileUpload: React.FC<FileUploadProps> = ({
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       handleFiles(e.dataTransfer.files);
     }
@@ -184,10 +200,8 @@ const FileUpload: React.FC<FileUploadProps> = ({
       <div
         className={`
           relative border-2 border-dashed rounded-xl p-8 text-center transition-all duration-200 ease-in-out
-          ${dragActive 
-            ? 'border-blue-400 bg-blue-50 scale-105' 
-            : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
-          }
+          ${dragActive ? 'border-blue-400 bg-blue-50 scale-105'
+            : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'}
           ${uploadedFiles.length > 0 ? 'mb-6' : ''}
         `}
         onDragEnter={handleDragIn}
@@ -204,26 +218,18 @@ const FileUpload: React.FC<FileUploadProps> = ({
           onChange={(e) => e.target.files && handleFiles(e.target.files)}
           className="hidden"
         />
-        
         <div className={`transition-all duration-200 ${dragActive ? 'scale-110' : ''}`}>
           <div className="mb-4">
-            <Upload className={`w-12 h-12 mx-auto transition-colors duration-200 ${
-              dragActive ? 'text-blue-500' : 'text-gray-400'
-            }`} />
+            <Upload className={`w-12 h-12 mx-auto ${dragActive ? 'text-blue-500' : 'text-gray-400'}`} />
           </div>
-          
-          <div className="mb-2">
-            <p className="text-lg font-medium text-gray-700">
-              Glissez vos fichiers ici ou <span className="text-blue-500 underline cursor-pointer">parcourez</span>
-            </p>
-          </div>
-          
+          <p className="text-lg font-medium text-gray-700">
+            Glissez vos fichiers ici ou <span className="text-blue-500 underline cursor-pointer">parcourez</span>
+          </p>
           <div className="text-sm text-gray-500 space-y-1">
             <p>
-              {acceptedTypes.includes('*') 
-                ? 'Tous types de fichiers acceptés' 
-                : `Types acceptés: ${acceptedTypes.join(', ')}`
-              }
+              {acceptedTypes.includes('*')
+                ? 'Tous types de fichiers acceptés'
+                : `Types acceptés: ${acceptedTypes.join(', ')}`}
             </p>
             <p>Taille max: {maxFileSize}MB • Max {maxFiles} fichier{maxFiles > 1 ? 's' : ''}</p>
           </div>
@@ -233,74 +239,49 @@ const FileUpload: React.FC<FileUploadProps> = ({
       {/* Message d'erreur */}
       {error && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
-          <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+          <AlertCircle className="w-5 h-5 text-red-500" />
           <p className="text-red-700 text-sm">{error}</p>
         </div>
       )}
 
-      {/* Liste des fichiers uploadés */}
+      {/* Liste des fichiers */}
       {uploadedFiles.length > 0 && (
         <div className="space-y-3">
           <h3 className="text-lg font-medium text-gray-800">
             Fichiers ({uploadedFiles.length}/{maxFiles})
           </h3>
-          
-          {uploadedFiles.map((uploadedFile) => (
-            <div
-              key={uploadedFile.id}
-              className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow duration-200"
-            >
+          {uploadedFiles.map(uploadedFile => (
+            <div key={uploadedFile.id} className="bg-white border rounded-lg p-4 shadow-sm">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3 flex-1 min-w-0">
                   {getFileIcon(uploadedFile.file.name)}
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-gray-800 truncate">
-                      {uploadedFile.file.name}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      {formatFileSize(uploadedFile.file.size)}
-                    </p>
+                    <p className="font-medium text-gray-800 truncate">{uploadedFile.file.name}</p>
+                    <p className="text-sm text-gray-500">{formatFileSize(uploadedFile.file.size)}</p>
                   </div>
                 </div>
-                
                 <div className="flex items-center gap-2 ml-4">
-                  {uploadedFile.status === 'success' && (
-                    <CheckCircle className="w-5 h-5 text-green-500" />
-                  )}
-                  {uploadedFile.status === 'error' && (
-                    <AlertCircle className="w-5 h-5 text-red-500" />
-                  )}
-                  <button
-                    onClick={() => removeFile(uploadedFile.id)}
-                    className="p-1 text-gray-400 hover:text-red-500 transition-colors duration-200"
-                    title="Supprimer le fichier"
-                  >
+                  {uploadedFile.status === 'success' && <CheckCircle className="w-5 h-5 text-green-500" />}
+                  {uploadedFile.status === 'error' && <AlertCircle className="w-5 h-5 text-red-500" />}
+                  <button onClick={() => removeFile(uploadedFile.id)} className="p-1 text-gray-400 hover:text-red-500">
                     <X className="w-4 h-4" />
                   </button>
                 </div>
               </div>
-              
+
               {/* Barre de progression */}
-              {uploadedFile.status === 'uploading' && (
-                <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                  <div
-                    className="h-full bg-blue-500 transition-all duration-300 ease-out"
-                    style={{ width: `${uploadedFile.progress}%` }}
-                  />
-                </div>
-              )}
-              
-              {uploadedFile.status === 'success' && (
-                <div className="w-full bg-green-200 rounded-full h-2">
-                  <div className="h-full bg-green-500 w-full rounded-full" />
-                </div>
-              )}
-              
-              {uploadedFile.status === 'error' && (
-                <div className="w-full bg-red-200 rounded-full h-2">
-                  <div className="h-full bg-red-500 w-full rounded-full" />
-                </div>
-              )}
+              <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                <div
+                  className={`h-full transition-all duration-300 ease-out ${
+                    uploadedFile.status === 'error'
+                      ? 'bg-red-500'
+                      : uploadedFile.status === 'success'
+                      ? 'bg-green-500'
+                      : 'bg-blue-500'
+                  }`}
+                  style={{ width: `${uploadedFile.progress}%` }}
+                />
+              </div>
             </div>
           ))}
         </div>
@@ -309,4 +290,4 @@ const FileUpload: React.FC<FileUploadProps> = ({
   );
 };
 
-export default FileUpload;
+export default FileUploadWithAPI;
