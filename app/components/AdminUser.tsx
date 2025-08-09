@@ -14,6 +14,7 @@ import {
   AlertTriangle,
   X,
   Loader2,
+  FileText,
 } from "lucide-react";
 
 // Types pour les utilisateurs
@@ -45,6 +46,18 @@ interface ApiResponse {
     };
   };
   error?: string;
+}
+
+export interface DocumentItem {
+  id: number;
+  filename: string;
+  originalName: string;
+  size: number;
+  type: string;
+  documentType: string;
+  path: string;
+  uploadDate?: string;
+  isVerified?: boolean;
 }
 
 // Modal de confirmation de suppression
@@ -139,6 +152,14 @@ const AdminUser: React.FC = () => {
     isOpen: boolean;
     user: User | null;
   }>({ isOpen: false, user: null });
+
+  const [docsModal, setDocsModal] = useState<{
+    isOpen: boolean;
+    user: User | null;
+    loading: boolean;
+    error: string | null;
+    docs: DocumentItem[];
+  }>({ isOpen: false, user: null, loading: false, error: null, docs: [] });
 
   // Fonction pour récupérer les utilisateurs
   const fetchUsers = React.useCallback(async () => {
@@ -246,6 +267,27 @@ const AdminUser: React.FC = () => {
     } finally {
       setActionLoading(null);
     }
+  };
+
+  // Documents - Admin view
+  const openDocumentsModal = async (user: User) => {
+    try {
+      setDocsModal((prev) => ({ ...prev, isOpen: true, user, loading: true, error: null, docs: [] }));
+      const res = await fetch(`/api/upload/documents?userId=${user.id}`);
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.error || "Erreur lors de la récupération des documents");
+      }
+      const docs: DocumentItem[] = Array.isArray(data.files) ? data.files : [];
+      setDocsModal((prev) => ({ ...prev, loading: false, docs }));
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : "Erreur";
+      setDocsModal((prev) => ({ ...prev, loading: false, error: errorMessage }));
+    }
+  };
+
+  const closeDocumentsModal = () => {
+    setDocsModal({ isOpen: false, user: null, loading: false, error: null, docs: [] });
   };
 
   const getRoleColor = (role: string) => {
@@ -475,6 +517,15 @@ const AdminUser: React.FC = () => {
                             )}
                           </button>
 
+                          {/* Voir documents */}
+                          <button
+                            onClick={() => openDocumentsModal(user)}
+                            className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                            title="Voir documents"
+                          >
+                            <FileText className="w-4 h-4" />
+                          </button>
+
                           {/* Supprimer */}
                           <button
                             onClick={() =>
@@ -556,6 +607,78 @@ const AdminUser: React.FC = () => {
           </>
         )}
       </div>
+
+      {/* Modal documents */}
+      {docsModal.isOpen && docsModal.user && (
+        <div className="fixed inset-0 bg-transparent bg-opacity-50 backdrop-blur-sm  flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl border-2 border-black p-6 max-w-2xl w-full mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Documents de {docsModal.user.firstName} {docsModal.user.lastName}
+                </h3>
+                <p className="text-sm text-gray-500">
+                  {docsModal.loading ? "Chargement..." : `${docsModal.docs.length} document(s)`}
+                </p>
+              </div>
+              <button
+                onClick={closeDocumentsModal}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+              {docsModal.loading ? (
+                <div className="py-10 text-center">
+                  <Loader2 className="w-6 h-6 animate-spin text-gray-400 mx-auto mb-2" />
+                  <p className="text-gray-600">Chargement des documents...</p>
+                </div>
+              ) : docsModal.error ? (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                  {docsModal.error}
+                </div>
+              ) : docsModal.docs.length === 0 ? (
+                <div className="py-10 text-center text-gray-600">
+                  Aucun document trouvé pour cet utilisateur.
+                </div>
+              ) : (
+                docsModal.docs.map((doc) => (
+                  <div key={doc.id} className="flex items-center justify-between border rounded-lg p-3">
+                    <div className="flex items-center space-x-3">
+                      <FileText className="w-5 h-5 text-gray-600" />
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">{doc.originalName}</div>
+                        <div className="text-xs text-gray-500">
+                          {doc.documentType} • {(doc.size / (1024 * 1024)).toFixed(2)} MB
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <a
+                        href={doc.path}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3 py-1 text-sm text-blue-600 hover:bg-blue-50 rounded"
+                      >
+                        Ouvrir
+                      </a>
+                      <a
+                        href={doc.path}
+                        download
+                        className="px-3 py-1 text-sm text-gray-700 hover:bg-gray-100 rounded"
+                      >
+                        Télécharger
+                      </a>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal de suppression */}
       <DeleteModal
