@@ -184,115 +184,218 @@ export default function BookingHistory() {
         )}
 
         {!loading && !error && bookings.length > 0 && (
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            <div className="overflow-x-auto max-w-full">
-              <table className="min-w-full table-fixed divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Service</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Professionnel</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date & Heure</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[200px]">Localisation</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prix</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avis</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {bookings.map((booking) => {
-                    const bookingDate = new Date(booking.booking_time);
+          <>
+            {/* Mobile Card List */}
+            <div className="md:hidden space-y-4">
+              {bookings.map((booking) => {
+                const bookingDate = new Date(booking.booking_time);
 
-                    let locationDisplay;
-                    try {
-                      const coords = JSON.parse(booking.location);
-                      if (coords && typeof coords.lat === 'number' && typeof coords.lng === 'number') {
-                        locationDisplay = <AddressFromCoordinates lat={coords.lat} lng={coords.lng} />;
-                      } else {
+                let locationDisplay: React.ReactNode;
+                try {
+                  const coords = JSON.parse(booking.location);
+                  if (coords && typeof coords.lat === 'number' && typeof coords.lng === 'number') {
+                    locationDisplay = <AddressFromCoordinates lat={coords.lat} lng={coords.lng} />;
+                  } else {
+                    const displayText = booking.location.length > 40 ? booking.location.slice(0, 40) + '…' : booking.location;
+                    locationDisplay = <span title={booking.location}>{displayText}</span>;
+                  }
+                } catch {
+                  const displayText = booking.location.length > 40 ? booking.location.slice(0, 40) + '…' : booking.location;
+                  locationDisplay = <span title={booking.location}>{displayText}</span>;
+                }
+
+                return (
+                  <div key={booking.id} className="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
+                    {/* Header */}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="p-1.5 bg-gray-100 rounded-full shrink-0">
+                          <Briefcase size={16} className="text-gray-600" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-gray-900 truncate">{booking.service}</p>
+                          <p className="text-xs text-gray-500 truncate">{`${booking.prof_firstname} ${booking.prof_lastname}`}</p>
+                        </div>
+                      </div>
+                      <BookingStatusBadge status={booking.status} />
+                    </div>
+
+                    {/* Date & Location */}
+                    <div className="mt-3 space-y-2">
+                      <div className="flex items-center gap-2 text-sm text-gray-700">
+                        <Clock size={14} className="text-gray-400" />
+                        <span>
+                          {bookingDate.toLocaleDateString('fr-FR')} · {bookingDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                      <div className="flex items-start gap-2 text-sm text-gray-700">
+                        <MapPin size={14} className="text-gray-400 mt-0.5 shrink-0" />
+                        <div className="truncate">{locationDisplay}</div>
+                      </div>
+                    </div>
+
+                    {/* Price & Actions */}
+                    <div className="mt-3 flex items-center justify-between">
+                      <div className="flex items-center gap-1 text-sm font-medium text-gray-900">
+                        <DollarSign size={14} className="text-gray-400" />
+                        <span>{booking.price.toFixed(2)} FCFA</span>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        {booking.status !== 'completed' && booking.status !== 'cancelled' && (
+                          <button
+                            onClick={() => handleCancelBooking(booking.id)}
+                            disabled={!!cancellingId}
+                            className="inline-flex items-center gap-1 text-sm text-red-600 hover:text-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Annuler la réservation"
+                          >
+                            {cancellingId === booking.id ? (
+                              <RefreshCw className="animate-spin" size={18} />
+                            ) : (
+                              <XCircle size={18} />
+                            )}
+                            <span>Annuler</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Review */}
+                    {booking.status === 'completed' && (
+                      <div className="mt-3 border-t border-gray-100 pt-3">
+                        {booking.review ? (
+                          <div className="flex flex-col gap-1">
+                            <StarRating value={booking.review.rating} readOnly />
+                            {booking.review.comment && (
+                              <span className="text-xs text-gray-700">{booking.review.comment}</span>
+                            )}
+                          </div>
+                        ) : (
+                          <button
+                            className="text-sm text-blue-600 hover:underline"
+                            onClick={() => setReviewModal({ open: true, booking })}
+                          >
+                            Laisser un avis
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Desktop/Table layout */}
+            <div className="hidden md:block bg-white rounded-lg shadow overflow-hidden">
+              <div className="overflow-x-auto max-w-full">
+                <table className="min-w-full table-fixed divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Service</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Professionnel</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date & Heure</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[200px]">Localisation</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prix</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avis</th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {bookings.map((booking) => {
+                      const bookingDate = new Date(booking.booking_time);
+
+                      let locationDisplay;
+                      try {
+                        const coords = JSON.parse(booking.location);
+                        if (coords && typeof coords.lat === 'number' && typeof coords.lng === 'number') {
+                          locationDisplay = <AddressFromCoordinates lat={coords.lat} lng={coords.lng} />;
+                        } else {
+                          const displayText = booking.location.length > 30 ? booking.location.slice(0, 30) + '…' : booking.location;
+                          locationDisplay = <span title={booking.location}>{displayText}</span>;
+                        }
+                      } catch {
                         const displayText = booking.location.length > 30 ? booking.location.slice(0, 30) + '…' : booking.location;
                         locationDisplay = <span title={booking.location}>{displayText}</span>;
                       }
-                    } catch {
-                      const displayText = booking.location.length > 30 ? booking.location.slice(0, 30) + '…' : booking.location;
-                      locationDisplay = <span title={booking.location}>{displayText}</span>;
-                    }
 
-                    return (
-                      <tr key={booking.id} className="hover:bg-gray-50 transition-colors duration-200">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <div className="p-1.5 bg-gray-100 rounded-full">
-                              <Briefcase size={16} className="text-gray-600" />
-                            </div>
-                            <span className="text-sm font-medium text-gray-900">{booking.service}</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {`${booking.prof_firstname} ${booking.prof_lastname}`}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          <div className="flex flex-col">
-                            <span>{bookingDate.toLocaleDateString('fr-FR')}</span>
-                            <span className="text-gray-400">
-                              {bookingDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-500 max-w-[200px] w-[200px] truncate">
-                          <div className="flex items-center gap-1">
-                            <MapPin size={14} className="text-gray-400 flex-shrink-0" />
-                            <div className="truncate">{locationDisplay}</div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <div className="flex items-center gap-1 font-medium text-gray-900">
-                            <DollarSign size={14} className="text-gray-400" />
-                            <span>{booking.price.toFixed(2)} FCFA</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <BookingStatusBadge status={booking.status} />
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {booking.status === 'completed' ? (
-                            booking.review ? (
-                              <div className="flex flex-col gap-1">
-                                <StarRating value={booking.review.rating} readOnly />
-                                <span className="text-xs text-gray-700">{booking.review.comment}</span>
+                      return (
+                        <tr key={booking.id} className="hover:bg-gray-50 transition-colors duration-200">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center gap-2">
+                              <div className="p-1.5 bg-gray-100 rounded-full">
+                                <Briefcase size={16} className="text-gray-600" />
                               </div>
-                            ) : (
-                              <button
-                                className="text-blue-600 hover:underline"
-                                onClick={() => setReviewModal({ open: true, booking })}
-                              >
-                                Laisser un avis
-                              </button>
-                            )
-                          ) : null}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          {booking.status !== 'completed' && booking.status !== 'cancelled' && (
-                            <button
-                              onClick={() => handleCancelBooking(booking.id)}
-                              disabled={!!cancellingId}
-                              className="text-red-500 hover:text-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                              title="Annuler la réservation"
-                            >
-                              {cancellingId === booking.id ? (
-                                <RefreshCw className="animate-spin" size={20} />
+                              <span className="text-sm font-medium text-gray-900">{booking.service}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {`${booking.prof_firstname} ${booking.prof_lastname}`}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <div className="flex flex-col">
+                              <span>{bookingDate.toLocaleDateString('fr-FR')}</span>
+                              <span className="text-gray-400">
+                                {bookingDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-500 max-w-[200px] w-[200px] truncate">
+                            <div className="flex items-center gap-1">
+                              <MapPin size={14} className="text-gray-400 flex-shrink-0" />
+                              <div className="truncate">{locationDisplay}</div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm">
+                            <div className="flex items-center gap-1 font-medium text-gray-900">
+                              <DollarSign size={14} className="text-gray-400" />
+                              <span>{booking.price.toFixed(2)} FCFA</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <BookingStatusBadge status={booking.status} />
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {booking.status === 'completed' ? (
+                              booking.review ? (
+                                <div className="flex flex-col gap-1">
+                                  <StarRating value={booking.review.rating} readOnly />
+                                  <span className="text-xs text-gray-700">{booking.review.comment}</span>
+                                </div>
                               ) : (
-                                <XCircle size={20} />
-                              )}
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                                <button
+                                  className="text-blue-600 hover:underline"
+                                  onClick={() => setReviewModal({ open: true, booking })}
+                                >
+                                  Laisser un avis
+                                </button>
+                              )
+                            ) : null}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            {booking.status !== 'completed' && booking.status !== 'cancelled' && (
+                              <button
+                                onClick={() => handleCancelBooking(booking.id)}
+                                disabled={!!cancellingId}
+                                className="text-red-500 hover:text-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                title="Annuler la réservation"
+                              >
+                                {cancellingId === booking.id ? (
+                                  <RefreshCw className="animate-spin" size={20} />
+                                ) : (
+                                  <XCircle size={20} />
+                                )}
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
+          </>
         )}
       </div>
 
