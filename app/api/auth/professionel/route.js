@@ -10,7 +10,7 @@ export const POST = async (req) => {
   try {
     const hashedPassword = await bcrypt.hash(user.password, 10);
     const results = await query(
-      `INSERT INTO users (firstname, lastname, email, password, role) VALUES ('${user.firstname}', '${user.lastname}', '${user.email}', '${hashedPassword}', 'professional')`
+      `INSERT INTO users (firstname, lastname, email, password, role, status) VALUES ('${user.firstname}', '${user.lastname}', '${user.email}', '${hashedPassword}', 'professional', 'inactif')`
     );
     const userId= results.insertId;
     await query(
