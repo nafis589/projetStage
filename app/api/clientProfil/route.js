@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import util from "util";
 import db from "@/util/db";
 import { getServerSession } from "next-auth";
-import { authOptions } from "../auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 
 // Promisify the db.query method
 const query = util.promisify(db.query).bind(db);
