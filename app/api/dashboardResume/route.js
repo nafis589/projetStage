@@ -205,7 +205,7 @@ export async function GET(request) {
           latitude = locationData.lat;
           longitude = locationData.lng;
         }
-      } catch (e) {
+      } catch {
         // Si le parsing échoue, on laisse lat/lng à null et on log l'erreur
         console.error(`Impossible de parser les coordonnées JSON pour la réservation ${booking.id}:`, locationString);
       }
