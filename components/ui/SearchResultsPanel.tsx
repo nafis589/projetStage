@@ -202,42 +202,43 @@ const SearchServiceView = () => {
     markersRef.current = {};
 
     try {
-      const response = await fetch(
-        `/api/professionals/search?service=${encodeURIComponent(
-          searchService
-        )}`
-      );
-      if (!response.ok) throw new Error("Failed to fetch professionals");
-      const data: Professional[] = await response.json();
-      setProfessionals(data);
+  const response = await fetch(
+    `/api/professionals/search?service=${encodeURIComponent(searchService)}`
+  );
+  if (!response.ok) throw new Error("Failed to fetch professionals");
 
-      if (data.length > 0) {
-        // Add new markers and fit map to bounds
-        const map = mapRef.current;
-        if (!map) return;
+  const data: Professional[] = await response.json();
+  setProfessionals(data);
 
-        const bounds = new (await import("maplibre-gl")).default.LngLatBounds();
-        data.forEach((prof) => {
-          const pos: LngLatLike = [prof.longitude, prof.latitude];
-          const el = document.createElement("div");
-          el.className = "w-4 h-4 bg-blue-600 rounded-full border-2 border-white shadow-md";
+  if (data.length > 0) {
+    const map = mapRef.current;
+    if (!map) return;
 
-          const marker = new (await import("maplibre-gl")).default.Marker(el)
-            .setLngLat(pos)
-            .addTo(map);
+    const maplibre = await import("maplibre-gl");
+    const bounds = new maplibre.LngLatBounds();
 
-          markersRef.current[prof.id] = marker;
-          bounds.extend(pos);
-        });
+    data.forEach((prof) => {
+      const pos: LngLatLike = [prof.longitude, prof.latitude];
+      const el = document.createElement("div");
+      el.className = "w-4 h-4 bg-blue-600 rounded-full border-2 border-white shadow-md";
 
-        map.fitBounds(bounds, { padding: 150, maxZoom: 15, duration: 1000 });
-      }
-    } catch (error) {
-      console.error("Search error:", error);
-      // Add toast notification for error
-    } finally {
-      setIsLoading(false);
-    }
+      const marker = new maplibre.Marker(el)
+        .setLngLat(pos)
+        .addTo(map);
+
+      markersRef.current[prof.id] = marker;
+      bounds.extend(pos);
+    });
+
+    map.fitBounds(bounds, { padding: 150, maxZoom: 15, duration: 1000 });
+  }
+} catch (error) {
+  console.error("Search error:", error);
+  // Add toast notification for error
+} finally {
+  setIsLoading(false);
+}
+
   };
   
   const handleSelectProfessional = (professional: Professional) => {
