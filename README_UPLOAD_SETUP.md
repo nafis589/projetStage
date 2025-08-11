@@ -30,17 +30,27 @@ CREATE TABLE professional_documents (
 );
 ```
 
-## 2. Structure des dossiers
+## 2. Stockage des fichiers (Vercel Blob)
 
-Le système créera automatiquement la structure suivante :
+En production sur Vercel, l'écriture sur le disque (`public/uploads`) n'est pas persistante. Le projet est désormais migré vers **Vercel Blob** pour stocker les fichiers de manière durable.
+
+### Variables d'environnement requises
+
+Ajoutez dans vos variables d'environnement (
+`Vercel Project Settings > Environment Variables` ou `.env.local` en dev) :
 
 ```
-public/
-└── uploads/
-    └── documents/
-        ├── .gitkeep
-        └── [fichiers uploadés]
+BLOB_READ_WRITE_TOKEN=...   # Token généré depuis le dashboard Vercel Blob
+NEXTAUTH_SECRET=...         # Déjà présent pour NextAuth
 ```
+
+Référez-vous à la documentation Vercel Blob pour créer un token avec accès lecture/écriture.
+
+### Comportement
+
+- À l'upload, les fichiers sont envoyés vers Vercel Blob avec un accès public.
+- L'URL publique retournée est enregistrée en base (`professional_documents.file_path`).
+- La suppression supprime le blob distant via l'API Blob.
 
 ## 3. Fonctionnalités implémentées
 
@@ -111,4 +121,4 @@ Vous pouvez créer un script de maintenance pour supprimer les fichiers qui ne s
 ```
 
 ### Sauvegarde
-N'oubliez pas d'inclure le dossier `public/uploads/` dans vos sauvegardes régulières.
+Les fichiers étant stockés sur Vercel Blob, il n'est plus nécessaire de sauvegarder `public/uploads/`. Assurez-vous de sauvegarder la base de données qui contient les URL de fichiers.

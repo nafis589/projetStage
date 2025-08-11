@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { writeFile, mkdir, unlink } from "fs/promises";
+import { unlink } from "fs/promises";
 import path from "path";
 import { getToken } from "next-auth/jwt";
 import util from "util";
@@ -10,11 +10,15 @@ import {
   isValidFileType,
   isValidFileSize
 } from "@/lib/documentUtils";
+import { put, del as blobDelete } from "@vercel/blob";
 
 const query = util.promisify(db.query).bind(db);
 
 export async function POST(request) {
   try {
+    if (!process.env.BLOB_READ_WRITE_TOKEN) {
+      return NextResponse.json({ error: "Configuration manquante: BLOB_READ_WRITE_TOKEN" }, { status: 500 });
+    }
     // Authentification avec NextAuth
     const token = await getToken({
       req: request, // ✅ On passe l'objet NextRequest directement
@@ -34,8 +38,6 @@ export async function POST(request) {
     }
 
     const uploadedFiles = [];
-    const uploadDir = path.join(process.cwd(), "public/uploads/documents");
-    await mkdir(uploadDir, { recursive: true });
 
     for (const file of files) {
       if (!file || file.size === 0) continue;
@@ -54,12 +56,14 @@ export async function POST(request) {
         );
       }
 
+      // Upload vers Vercel Blob (public)
       const uniqueFilename = generateUniqueFilename(file.name);
-      const filePath = path.join(uploadDir, uniqueFilename);
-      const relativePath = `/uploads/documents/${uniqueFilename}`;
-
-      const buffer = Buffer.from(await file.arrayBuffer());
-      await writeFile(filePath, buffer);
+      const blobRes = await put(uniqueFilename, file, {
+        access: "public",
+        addRandomSuffix: true,
+        contentType: file.type,
+        token: process.env.BLOB_READ_WRITE_TOKEN,
+      });
 
       const documentType = determineDocumentType(file.name);
 
@@ -69,9 +73,9 @@ export async function POST(request) {
          VALUES (?, ?, ?, ?, ?, ?, ?)`,
         [
           token.userId,
-          uniqueFilename,
+          (blobRes.pathname || uniqueFilename).split("/").pop(),
           file.name,
-          relativePath,
+          blobRes.url,
           file.size,
           file.type,
           documentType
@@ -80,12 +84,12 @@ export async function POST(request) {
 
       uploadedFiles.push({
         id: result.insertId,
-        filename: uniqueFilename,
+        filename: (blobRes.pathname || uniqueFilename).split("/").pop(),
         originalName: file.name,
         size: file.size,
         type: file.type,
         documentType,
-        path: relativePath
+        path: blobRes.url
       });
     }
 
@@ -171,13 +175,22 @@ export async function DELETE(request) {
       return NextResponse.json({ error: "Interdit" }, { status: 403 });
     }
 
-    // Supprimer le fichier physique (best-effort)
-    try {
-      const rel = typeof doc.file_path === "string" ? doc.file_path.replace(/^\\|^\//, "") : "";
-      const abs = path.join(process.cwd(), "public", rel);
-      await unlink(abs);
-    } catch {
-      // Ignorer si fichier déjà supprimé
+    // Supprimer le fichier depuis Vercel Blob si l'URL est distante, sinon best-effort local
+    const filePathValue = typeof doc.file_path === "string" ? doc.file_path : "";
+    if (/^https?:\/\//i.test(filePathValue)) {
+      try {
+        await blobDelete(filePathValue, { token: process.env.BLOB_READ_WRITE_TOKEN });
+      } catch {
+        // Ignorer les erreurs de suppression distante
+      }
+    } else {
+      try {
+        const rel = filePathValue.replace(/^\\|^\//, "");
+        const abs = path.join(process.cwd(), "public", rel);
+        await unlink(abs);
+      } catch {
+        // Ignorer si fichier déjà supprimé
+      }
     }
 
     await query(`DELETE FROM professional_documents WHERE id = ?`, [id]);
