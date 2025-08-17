@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import {
@@ -67,6 +67,34 @@ export default function ClientDashboard() {
     null
   );
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
+
+  const memoizedCenter = useMemo<[number, number]>(() => {
+    return userLocation
+      ? [userLocation.lng, userLocation.lat]
+      : [1.2228, 6.1319]; // exemple (lat, lng)
+  }, [userLocation]);
+
+  const memoizedMarkers = useMemo(() => {
+    return [
+      ...professionals.map((p) => ({
+        id: p.id,
+        latitude: p.latitude || 0,
+        longitude: p.longitude || 0,
+        isSelected: selectedProfessional?.id === p.id,
+        isUser: false,
+      })),
+      ...(userLocation
+        ? [
+            {
+              id: "user-location",
+              latitude: userLocation.lat,
+              longitude: userLocation.lng,
+              isUser: true,
+            },
+          ]
+        : []),
+    ].filter((marker) => marker.latitude !== 0 && marker.longitude !== 0);
+  }, [professionals, selectedProfessional, userLocation]);
 
   const dateRef = useRef<HTMLDivElement | null>(null);
   const timeRef = useRef<HTMLDivElement | null>(null);
@@ -417,12 +445,14 @@ export default function ClientDashboard() {
           </div>
 
           {/* User Section */}
-          <div className="relative" ref={userMenuContainerRef}>
+          <div className="relative" 
+           ref={userMenuContainerRef}
+           onMouseEnter={() => setShowUserModal(true)}
+           onMouseLeave={() => setShowUserModal(false)}
+          >
             <div
               ref={userModalRef}
               className="flex items-center space-x-4 cursor-pointer"
-              onMouseEnter={() => setShowUserModal(true)}
-              onMouseLeave={() => setShowUserModal(false)}
               onClick={() => setShowUserModal((v) => !v)}
               aria-haspopup="menu"
               aria-expanded={showUserModal}
@@ -441,8 +471,6 @@ export default function ClientDashboard() {
             {showUserModal && (
               <div
                 className="absolute top-full right-0 mt-4 w-80 bg-white backdrop-blur-xl rounded-3xl shadow-2xl border border-gray-200 z-50 overflow-hidden transform transition-all duration-300 ease-out animate-in slide-in-from-top-2"
-                onMouseEnter={() => setShowUserModal(true)}
-                onMouseLeave={() => setShowUserModal(false)}
                 style={{
                   boxShadow:
                     "0 20px 40px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.05)",
@@ -806,34 +834,11 @@ export default function ClientDashboard() {
           >
             <CustomMap
               id="client-dashboard-map"
-              center={
-                userLocation
-                  ? [userLocation.lng, userLocation.lat]
-                  : [1.2228, 6.1319]
-              } // Corrected to [lng, lat]
+              key="client-dashboard-map"
+              center={memoizedCenter}
               zoom={13}
               className="w-full h-[45vh] sm:h-[50vh] lg:h-full"
-              markers={[
-                ...professionals.map((p) => ({
-                  id: p.id,
-                  latitude: p.latitude || 0,
-                  longitude: p.longitude || 0,
-                  isSelected: selectedProfessional?.id === p.id,
-                  isUser: false,
-                })),
-                ...(userLocation
-                  ? [
-                      {
-                        id: "user-location",
-                        latitude: userLocation.lat,
-                        longitude: userLocation.lng,
-                        isUser: true,
-                      },
-                    ]
-                  : []),
-              ].filter(
-                (marker) => marker.latitude !== 0 && marker.longitude !== 0
-              )}
+              markers={memoizedMarkers}
             />
           </div>
         </div>

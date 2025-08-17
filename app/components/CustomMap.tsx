@@ -19,7 +19,13 @@ interface CustomMapProps {
   markers?: Marker[];
 }
 
-const CustomMap: React.FC<CustomMapProps> = ({ id, center, zoom, className, markers = [] }) => {
+const CustomMap: React.FC<CustomMapProps> = ({
+  id,
+  center,
+  zoom,
+  className,
+  markers = [],
+}) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<{ [key: number]: maplibregl.Marker }>({});
@@ -61,14 +67,14 @@ const CustomMap: React.FC<CustomMapProps> = ({ id, center, zoom, className, mark
 
     // Supprimer les marqueurs qui ne sont plus dans la liste
     Object.entries(markersRef.current).forEach(([id, marker]) => {
-      if (!markers.find(m => m.id === Number(id))) {
+      if (!markers.find((m) => m.id === Number(id))) {
         marker.remove();
         delete markersRef.current[Number(id)];
       }
     });
 
     // Ajouter ou mettre à jour les marqueurs
-    markers.forEach(marker => {
+    markers.forEach((marker) => {
       const el = document.createElement("div");
       el.className = "marker";
       el.style.width = "24px";
@@ -97,4 +103,4 @@ const CustomMap: React.FC<CustomMapProps> = ({ id, center, zoom, className, mark
   return <div ref={mapContainer} className={className} id={id} />;
 };
 
-export default CustomMap; 
+export default CustomMap;

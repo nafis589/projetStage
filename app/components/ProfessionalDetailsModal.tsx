@@ -41,16 +41,17 @@ const ProfessionalDetailsModal: React.FC<ProfessionalDetailsModalProps> = ({
       toast({
         variant: "destructive",
         title: "Erreur",
-        description: "Impossible de déterminer votre position pour la réservation.",
+        description:
+          "Impossible de déterminer votre position pour la réservation.",
       });
       return;
     }
     setLoading(true);
     try {
-      const response = await fetch('/api/bookings', {
-        method: 'POST',
+      const response = await fetch("/api/bookings", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           professional_id: professional.id,
@@ -88,10 +89,7 @@ const ProfessionalDetailsModal: React.FC<ProfessionalDetailsModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div
-        className="absolute inset-0 bg-black/30"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black/30" onClick={onClose} />
 
       <div className="relative bg-white rounded-2xl w-full max-w-md aspect-square flex flex-col shadow-2xl">
         {/* Header avec profil */}
@@ -102,18 +100,20 @@ const ProfessionalDetailsModal: React.FC<ProfessionalDetailsModalProps> = ({
           >
             <X size={18} className="text-gray-500" />
           </button>
-          
+
           {/* Avatar */}
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-3">
             <User size={32} className="text-gray-400" />
           </div>
-          
+
           {/* Info principale */}
           <h2 className="text-xl font-bold text-center">
             {professional.firstname} {professional.lastname}
           </h2>
-          <p className="text-gray-500 text-sm mt-1">{professional.service_name}</p>
-          
+          <p className="text-gray-500 text-sm mt-1">
+            {professional.service_name}
+          </p>
+
           {/* Status badge */}
           <div className="mt-2">
             {professional.availability.status === "available" ? (
@@ -136,11 +136,15 @@ const ProfessionalDetailsModal: React.FC<ProfessionalDetailsModalProps> = ({
               <div className="text-xs text-gray-500">Utilization Rate</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-black">{professional.avg_rating.toFixed(1)}</div>
+              <div className="text-2xl font-bold text-black">
+                {professional.avg_rating.toFixed(1)}
+              </div>
               <div className="text-xs text-gray-500">Avg Rating</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-black">{professional.min_price} F</div>
+              <div className="text-2xl font-bold text-black">
+                {professional.min_price} F
+              </div>
               <div className="text-xs text-gray-500">Min Price</div>
             </div>
           </div>
@@ -153,8 +157,8 @@ const ProfessionalDetailsModal: React.FC<ProfessionalDetailsModalProps> = ({
                 <span className="text-sm">Next Availability</span>
               </div>
               <span className="text-sm font-medium">
-                {professional.availability.status === "available" 
-                  ? `${professional.availability.estimated_time} min` 
+                {professional.availability.status === "available"
+                  ? `${professional.availability.estimated_time} min`
                   : "N/A"}
               </span>
             </div>
@@ -164,7 +168,9 @@ const ProfessionalDetailsModal: React.FC<ProfessionalDetailsModalProps> = ({
                 <Star size={16} className="mr-2" />
                 <span className="text-sm">Reviews</span>
               </div>
-              <span className="text-sm font-medium">{professional.reviews_count} avis</span>
+              <span className="text-sm font-medium">
+                {professional.reviews_count} avis
+              </span>
             </div>
 
             <div className="flex items-center justify-between py-2">
@@ -217,4 +223,4 @@ const ProfessionalDetailsModal: React.FC<ProfessionalDetailsModalProps> = ({
   );
 };
 
-export default ProfessionalDetailsModal; 
+export default ProfessionalDetailsModal;
