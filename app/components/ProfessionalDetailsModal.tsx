@@ -139,13 +139,13 @@ const ProfessionalDetailsModal: React.FC<ProfessionalDetailsModalProps> = ({
               <div className="text-2xl font-bold text-black">
                 {professional.avg_rating.toFixed(1)}
               </div>
-              <div className="text-xs text-gray-500">Avg Rating</div>
+              <div className="text-xs text-gray-500">Notes moyenne</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-black">
                 {professional.min_price} F
               </div>
-              <div className="text-xs text-gray-500">Min Price</div>
+              <div className="text-xs text-gray-500">Prix Minimum</div>
             </div>
           </div>
 
@@ -154,7 +154,7 @@ const ProfessionalDetailsModal: React.FC<ProfessionalDetailsModalProps> = ({
             <div className="flex items-center justify-between py-2">
               <div className="flex items-center text-gray-500">
                 <Clock size={16} className="mr-2" />
-                <span className="text-sm">Next Availability</span>
+                <span className="text-sm">Prochaine disponibilité</span>
               </div>
               <span className="text-sm font-medium">
                 {professional.availability.status === "available"
@@ -166,7 +166,7 @@ const ProfessionalDetailsModal: React.FC<ProfessionalDetailsModalProps> = ({
             <div className="flex items-center justify-between py-2">
               <div className="flex items-center text-gray-500">
                 <Star size={16} className="mr-2" />
-                <span className="text-sm">Reviews</span>
+                <span className="text-sm">Avis</span>
               </div>
               <span className="text-sm font-medium">
                 {professional.reviews_count} avis
@@ -176,7 +176,7 @@ const ProfessionalDetailsModal: React.FC<ProfessionalDetailsModalProps> = ({
             <div className="flex items-center justify-between py-2">
               <div className="flex items-center text-gray-500">
                 <MapPin size={16} className="mr-2" />
-                <span className="text-sm">Location</span>
+                <span className="text-sm">Localisation</span>
               </div>
               <span className="text-sm font-medium text-right flex-1 ml-2 truncate">
                 {professional.address}
@@ -186,7 +186,7 @@ const ProfessionalDetailsModal: React.FC<ProfessionalDetailsModalProps> = ({
 
           {/* Tags */}
           <div className="mt-6">
-            <div className="text-sm text-gray-500 mb-2">Skillset</div>
+            <div className="text-sm text-gray-500 mb-2">Compétences</div>
             <div className="flex flex-wrap gap-2">
               <span className="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-md">
                 {professional.service_name}

@@ -445,10 +445,11 @@ export default function ClientDashboard() {
           </div>
 
           {/* User Section */}
-          <div className="relative" 
-           ref={userMenuContainerRef}
-           onMouseEnter={() => setShowUserModal(true)}
-           onMouseLeave={() => setShowUserModal(false)}
+          <div
+            className="relative"
+            ref={userMenuContainerRef}
+            onMouseEnter={() => setShowUserModal(true)}
+            onMouseLeave={() => setShowUserModal(false)}
           >
             <div
               ref={userModalRef}

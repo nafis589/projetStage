@@ -48,11 +48,14 @@ export async function GET(request) {
         p.address,
         s.prix as min_price,
         l.latitude,
-        l.longitude
+        l.longitude,
+        COALESCE(AVG(r.rating), 0) as avg_rating,
+        COUNT(r.id) as reviews_count
       FROM users u
       JOIN professionals p ON u.id = p.user_id
       JOIN services s ON u.id = s.professional_id
       LEFT JOIN Location l ON u.id = l.user_id
+      LEFT JOIN reviews r ON u.id = r.professional_id
       ${availabilityJoin}
       WHERE s.service LIKE ? AND u.role = 'professional' ${availabilityWhere}
       GROUP BY u.id, u.firstname, u.lastname, s.service, p.bio, p.address, s.prix, l.latitude, l.longitude
@@ -63,8 +66,8 @@ export async function GET(request) {
     // On peut ajouter ici la logique pour calculer le temps estimé si besoin
     const results = professionals.map(p => ({
         ...p,
-        avg_rating: 0, // Not in schema
-        reviews_count: 0, // Not in schema
+        avg_rating: parseFloat(p.avg_rating) || 0,
+        reviews_count: parseInt(p.reviews_count) || 0,
         availability: {
             status: "available", // On pourrait raffiner selon la logique métier
             estimated_time: 30 // Placeholder
